@@ -1,4 +1,6 @@
+using AutoGen.Core;
 using AutoGen.OpenAI;
+using AutoGen.OpenAI.Extension;
 using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
@@ -6,6 +8,7 @@ using Microsoft.Extensions.Options;
 using OpenAI;
 using TradingAgent.Agents.Config;
 using TradingAgent.Agents.Messages;
+using IAgent = AutoGen.Core.IAgent;
 
 namespace TradingAgent.Agents;
 
@@ -14,7 +17,7 @@ public class CfoAgent :
     BaseAgent,
     IHandle<InitMessage>
 {
-    private readonly OpenAIChatAgent agent;
+    private readonly IAgent agent;
 
     public CfoAgent(
         AgentId id,
@@ -42,7 +45,9 @@ Always prioritize the user's financial benefit.";
         this.agent = new OpenAIChatAgent(
             chatClient: client,
             name: "trading_analyst",
-            systemMessage: systemMessage);
+            systemMessage: systemMessage)
+            .RegisterMessageConnector()
+            .RegisterPrintMessage();
     }
     
     public ValueTask HandleAsync(InitMessage item, MessageContext messageContext)

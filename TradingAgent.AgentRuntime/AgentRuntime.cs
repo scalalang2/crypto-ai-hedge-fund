@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using TradingAgent.Agents;
 using TradingAgent.Agents.Config;
 using TradingAgent.Agents.Messages;
+using TradingAgent.Core.UpbitClient;
 
 namespace TradingAgent.AgentRuntime;
 
@@ -21,6 +22,8 @@ public class AgentRuntime(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        var upbitClient = new UpbitClient(options.Value.UpbitAccessKey, options.Value.UpbitSecretKey);
+        
         var appBuilder = new AgentsAppBuilder();
         appBuilder.Services.AddOptions<LLMConfiguration>()
             .Configure(option =>
@@ -29,6 +32,7 @@ public class AgentRuntime(
                 option.OpenAIApiKey = options.Value.OpenAIApiKey;
             });
 
+        appBuilder.Services.AddSingleton<IUpbitClient>(upbitClient);
         appBuilder.Services.AddSingleton(_client);
         appBuilder.Services.AddLogging(builder => builder.AddConsole());
 

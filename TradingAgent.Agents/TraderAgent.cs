@@ -1,9 +1,8 @@
-using AutoGen.OpenAI;
-using Discord.WebSocket;
 using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using TradingAgent.Agents.Messages;
+using TradingAgent.Core.UpbitClient;
 
 namespace TradingAgent.Agents;
 
@@ -13,6 +12,7 @@ public class TraderAgent :
     IHandle<AnalystSummaryRequest>
 {
     public TraderAgent(
+        IUpbitClient upbitClient,
         AgentId id,
         IAgentRuntime runtime,
         ILogger<TraderAgent> logger) : base(id, runtime, "Trading Analysis Agent", logger)
