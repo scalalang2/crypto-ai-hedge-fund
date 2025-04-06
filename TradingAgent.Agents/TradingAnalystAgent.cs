@@ -12,7 +12,6 @@ using OpenAI;
 using TradingAgent.Agents.Config;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Core.UpbitClient;
-using TradingAgent.Core.UpbitClient.Extensions;
 using IAgent = AutoGen.Core.IAgent;
 
 namespace TradingAgent.Agents;
@@ -59,18 +58,22 @@ Key Responsibilities:
         var request = new Candles.Request();
         request.market = item.Market;
         request.count = "100";
-        var minute30 = await this.upbitClient.GetMinuteCandles(30, request);
-        var prompt = minute30.GeneratePrompt();
-
-        var message = $"This is a 30 minute candle chart {item.Market} for market\n{prompt}\n";
-        message += "Please analyze the market and provide the following information:\n";
-        message += "Respond in JSON format with the following keys:\n";
-        message += "- TargetPrice: you thought that the price should be\n";
-        message += "- Confidence: score your confidence level in the range [1, 10]\n";
-        message += "- AnalystSentiment: Analyst sentiment is an integer value between 0 and 4, represent StrongBuy = 0, Buy = 1, Neutral = 2, Sell = 3, StrongSell = 4\n";
+        var candleData = await this.upbitClient.GetMinuteCandles(30, request);
+        var candleDataAsJson = JsonSerializer.Serialize(candleData);
         
         var schemaBuilder = new JsonSchemaBuilder().FromType<AnalystSummaryResponse>();
         var schema = schemaBuilder.Build();
+        var schemaAsJson = JsonSerializer.Serialize(schema);
+        
+        var message = $"30 Minute Candle Chart {item.Market} for market\n{candleDataAsJson}\n\n";
+        
+        var currentTime = DateTime.UtcNow.AddHours(9);
+        message += $"Current time: {currentTime:yyyy-MM-dd HH:mm:ss} KST\n\n";
+        
+        message += "Please analyze the market and provide the following information:\n";
+        message += "Respond in JSON format with the following keys:\n";
+        message += $"{schemaAsJson}";
+        
         var userMessage = new TextMessage(Role.User, message);
         var reply = await this.agent.GenerateReplyAsync(
             messages: [userMessage],

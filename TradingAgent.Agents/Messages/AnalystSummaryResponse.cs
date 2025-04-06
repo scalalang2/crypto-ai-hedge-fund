@@ -19,31 +19,35 @@ public enum AnalystSentiment
 /// 트레이딩 애널리스트의 매수/매도 의견
 /// </summary>
 ///
+/// <summary>
+/// Buy/Sell opinions of a trading analyst
+/// </summary>
+///
 [Title("AnalystSummaryResponse")]
 public class AnalystSummaryResponse
 {
     [JsonPropertyName("marketOverview")]
-    [Description("summarize market")]
+    [Description("Current market conditions")]
     [Required]
     public string MarketOverview { get; set; } = string.Empty;
     
     [JsonPropertyName("technicalAnalysis")]
-    [Description("express your analysis result")]
+    [Description("Results of technical analysis")]
     [Required]
     public string TechnicalAnalysis { get; set; } = string.Empty;
     
     [JsonPropertyName("confidence")]
-    [Description("score your confidence level in the interval [1, 10]")]
+    [Description("Indicates the confidence level in the results, expressed as an integer from 1 to 10, where higher numbers indicate greater confidence.")]
     [Required]
     public int Confidence { get; set; }
     
     [JsonPropertyName("targetPrice")]
-    [Description("target price you thought that the price should be")]
+    [Description("The target price as estimated by the analyst.")]
     [Required]
     public long TargetPrice { get; set; }
     
     [JsonPropertyName("analystSentiment")]
-    [Description("Analyst sentiment is an integer value between 1 and 5, represent StrongBuy = 0, Buy = 1, Neutral = 2, Sell = 3, StrongSell = 4")]
+    [Description("The analyst's buy/sell opinion, expressed as a number: 0 means StrongBuy, 1 means Buy, 2 means Hold, 3 means Sell, and 4 means StrongSell.")]
     [Required]
     public int AnalystSentiment { get; set; } = new();
 }

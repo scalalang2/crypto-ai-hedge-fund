@@ -1,4 +1,7 @@
 // Copied from https://github.com/airtaxi/.NET-UPbit-Api.git
+
+using Json.Schema.Generation;
+
 namespace TradingAgent.Core.UpbitClient;
 
 public class DayCandles
@@ -371,58 +374,114 @@ public class PlaceOrder
 
 public class Chance
 {
+    
+    [Title("Order Availability Information")]
     public class Response
     {
         public class Bid
         {
+            [Description("The uppercase English code representing the currency")]
             public string currency { get; set; }
+            
+            [Description("The unit of order amount")]
             public object price_unit { get; set; }
+            
+            [Description("You must spend at least this amount in a single order.")]
             public int min_total { get; set; }
         }
 
         public class Ask
         {
+            [Description("The uppercase English code representing the currency")]
             public string currency { get; set; }
+            
+            [Description("The unit of order amount")]
             public object price_unit { get; set; }
+            
+            [Description("You must spend at least this amount in a single order.")]
             public int min_total { get; set; }
         }
 
         public class Market
         {
+            [Description("The unique key of the market")]
             public string id { get; set; }
+            
+            [Description("The name of the market")]
             public string name { get; set; }
+            
             public List<string> order_types { get; set; }
+            
             public List<string> order_sides { get; set; }
+            
+            [Description("Restrictions when buying")]
             public Bid bid { get; set; }
+            
+            [Description("Restrictions when selling")]
             public Ask ask { get; set; }
+            
+            [Description("Maximum buy/sell amount")]
             public string max_total { get; set; }
+            
+            [Description("Market operating status")]
             public string state { get; set; }
         }
 
         public class BidAccount
         {
+            [Description("The uppercase English code representing the currency")]
             public string currency { get; set; }
+            
+            [Description("Available amount/quantity for orders - You can place orders using this amount minus Locked and AskFee.")]
             public string balance { get; set; }
+            
+            [Description("Amount/quantity locked in ongoing orders")]
             public string locked { get; set; }
+            
+            [Description("Average purchase price")]
             public string avg_buy_price { get; set; }
+            
+            [Description("Whether the average purchase price has been modified")]
             public bool avg_buy_price_modified { get; set; }
+            
+            [Description("Currency used as the basis for average price")]
             public string unit_currency { get; set; }
         }
 
         public class AskAccount
         {
+            [Description("The uppercase English code representing the currency")]
             public string currency { get; set; }
+            
+            [Description("Available amount/quantity for orders - You can place orders using this amount minus Locked and AskFee.")]
             public string balance { get; set; }
+            
+            [Description("Amount/quantity locked in ongoing orders")]
             public string locked { get; set; }
+            
+            [Description("Average purchase price")]
             public string avg_buy_price { get; set; }
+            
+            [Description("Whether the average purchase price has been modified")]
             public bool avg_buy_price_modified { get; set; }
+            
+            [Description("Currency used as the basis for average price")]
             public string unit_currency { get; set; }
         }
 
+        [Description("Buy fee rate")]
         public string bid_fee { get; set; }
+        
+        [Description("Sell fee rate")]
         public string ask_fee { get; set; }
+        
+        [Description("Information about the market")]
         public Market market { get; set; }
+        
+        [Description("Account status for the currency used when buying")]
         public BidAccount bid_account { get; set; }
+        
+        [Description("Account status for the currency used when selling")]
         public AskAccount ask_account { get; set; }
     }
     
@@ -431,6 +490,8 @@ public class Chance
         public string market { get; set; }
     }
 }
+
+
 public class Accounts
 {
     public class Response

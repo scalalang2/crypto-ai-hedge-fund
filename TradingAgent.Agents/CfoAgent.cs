@@ -12,7 +12,6 @@ using OpenAI;
 using TradingAgent.Agents.Config;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Core.UpbitClient;
-using TradingAgent.Core.UpbitClient.Extensions;
 using IAgent = AutoGen.Core.IAgent;
 
 namespace TradingAgent.Agents;
@@ -76,27 +75,25 @@ Always prioritize the user's financial benefit.";
         var request = new Chance.Request();
         request.market = "KRW-ETH";
         var chance = await this.upbitClient.GetChance(request);
-        var content = "Your [Wallet] information given as below\n";
-        content += chance.GeneratePrompt();
-        content += "You can only buy amount of BidAccount.Balance - BidAccount.Locked - Fee.BidFee\n";
-        content += "You can only sell amount of AskAccount.Balance - AskAccount.Locked - Fee.AskFee\n";
-        content += "When you decide to buy or sell, you must trade at least 50,000 KRW.\n";
-        content += "If you decide to buy, you must use BidAccount.Balance - BidAccount.Locked amount.\n";
-        content += "If you decide to sell, you must use AskAccount.Balance - AskAccount.Locked amount.\n";
-        content += "[Analyst's Summary]\n";
-        content += "1. Market Summary\n";
-        content += $"{item.MarketOverview}\n";
-        content += "2. Technical Analysis\n";
-        content += $"{item.TechnicalAnalysis}\n";
-        content += "3. Sentiment, 0 means StrongBuy, 1 means Buy, 2 means Neutral, 3 means Sell, 4 means StrongSell\n";
-        content += $"{item.AnalystSentiment}\n";
-        content += "4. Target Price\n";
-        content += $"{item.TargetPrice}\n";
-        content += "5. Confidence(ranged in [1, 10])\n";
-        content += $"{item.Confidence}\n";
-        content += "As a CFO, you should make the final decision yourself.\n";
+        var chanceAsJson = JsonSerializer.Serialize(chance);
+        var chanceSchemaBuilder = new JsonSchemaBuilder().FromType<Chance.Response>();
+        var chanceSchema = chanceSchemaBuilder.Build();
+        var chanceSchemaAsJson = JsonSerializer.Serialize(chanceSchema);
         
-        var userMessage = new TextMessage(Role.User, content);
+        var message = $"[Order Availability Schema]\n{chanceSchemaAsJson}\n";
+        message += $"[Order Availability Data]\n{chanceAsJson}\n\n";
+        
+        var summaryAsJson = JsonSerializer.Serialize(item);
+        var summarySchemaBuilder = new JsonSchemaBuilder().FromType<AnalystSummaryResponse>();
+        var summarySchema = summarySchemaBuilder.Build();
+        var summarySchemaAsJson = JsonSerializer.Serialize(summarySchema);
+        message += $"[Analyst's Schema]\n{summarySchemaAsJson}\n";
+        message += $"[Analyst's Summary]\n{summaryAsJson}\n";
+        message += "Please make the final decision.\n";
+        
+        _logger.LogInformation("Input Message for AnalystSummary {message}", message);
+        
+        var userMessage = new TextMessage(Role.User, message);
         
         var schemaBuilder = new JsonSchemaBuilder().FromType<AgentFinalDecision>();
         var schema = schemaBuilder.Build();
@@ -107,8 +104,6 @@ Always prioritize the user's financial benefit.";
                 OutputSchema = schema,
             });
         
-        var response = JsonSerializer.Deserialize<AgentFinalDecision>(reply.GetContent());
-        
-        this._logger.LogInformation("CfoAgent received AgentFinalDecision: {DecisionType}, {Amount}, {Reason}", response.DecisionType, response.Amount, response.Reason);
+        JsonSerializer.Deserialize<AgentFinalDecision>(reply.GetContent());
     }
 }

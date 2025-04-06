@@ -28,7 +28,7 @@ public class AgentRuntime(
         appBuilder.Services.AddOptions<LLMConfiguration>()
             .Configure(option =>
             {
-                option.Model = "gpt-4o";
+                option.Model = "gpt-4o-mini";
                 option.OpenAIApiKey = options.Value.OpenAIApiKey;
             });
 
