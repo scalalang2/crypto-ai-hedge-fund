@@ -8,6 +8,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\TradingAgent.AgentRuntime\TradingAgent.AgentRuntime.csproj" />
+        <ProjectReference Include="..\TradingAgent.Agents\TradingAgent.Agents.csproj" />
+        <ProjectReference Include="..\TradingAgent.Core\TradingAgent.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>

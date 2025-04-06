@@ -15,7 +15,8 @@ namespace TradingAgent.Agents;
 [TypeSubscription(nameof(CfoAgent))]
 public class CfoAgent : 
     BaseAgent,
-    IHandle<InitMessage>
+    IHandle<InitMessage>,
+    IHandle<AnalystSummaryResponse>
 {
     private readonly IAgent agent;
 
@@ -50,9 +51,21 @@ Always prioritize the user's financial benefit.";
             .RegisterPrintMessage();
     }
     
-    public ValueTask HandleAsync(InitMessage item, MessageContext messageContext)
+    public async ValueTask HandleAsync(InitMessage item, MessageContext messageContext)
     {
         _logger.LogInformation("CfoAgent received InitMessage: {Market}", item.Market);
+
+        var request = new AnalystSummaryRequest
+        {
+            Market = item.Market,
+        };
+
+        await this.PublishMessageAsync(request, new TopicId(nameof(TradingAnalystAgent)));
+    }
+
+    public ValueTask HandleAsync(AnalystSummaryResponse item, MessageContext messageContext)
+    {
+        _logger.LogInformation("CfoAgent received AnalystSummaryResponse: {Response}", item);
         
         return ValueTask.CompletedTask;
     }

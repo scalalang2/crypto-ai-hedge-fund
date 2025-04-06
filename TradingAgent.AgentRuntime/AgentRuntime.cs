@@ -38,9 +38,7 @@ public class AgentRuntime(
 
         appBuilder.UseInProcessRuntime(deliverToSelf: true)
             .AddAgent<CfoAgent>(nameof(CfoAgent))
-            .AddAgent<TradingAnalystAgent>(nameof(TradingAnalystAgent))
-            .AddAgent<TraderAgent>(nameof(TraderAgent))
-            .AddAgent<DiscordAgent>(nameof(DiscordAgent));
+            .AddAgent<TradingAnalystAgent>(nameof(TradingAnalystAgent));
         
         var agentApp = await appBuilder.BuildAsync();
         await agentApp.StartAsync();
@@ -51,7 +49,7 @@ public class AgentRuntime(
         await _client.StartAsync();
         
         var message = new InitMessage { Market = "KRW-ETH" };
-        await agentApp.PublishMessageAsync(message, new TopicId(nameof(CfoAgent))).ConfigureAwait(false);
+        await agentApp.PublishMessageAsync(message, new TopicId(nameof(CfoAgent), source: "agent")).ConfigureAwait(false);
         
         await agentApp.WaitForShutdownAsync().ConfigureAwait(false);
         await Task.Delay(-1, cancellationToken);

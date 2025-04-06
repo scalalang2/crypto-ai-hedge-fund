@@ -82,6 +82,25 @@ public class UpbitClient : IUpbitClient
         var token = encoder.Encode(payload, _secretKey);
         return $"Bearer {token}";
     }
+
+    private async Task<RestResponse> NonAuthApiCall(string endPoint, Dictionary<string, string> args = null)
+    {
+        if (args is null)
+            args = new Dictionary<string, string>();
+        
+        Uri url = new(_baseUrl, endPoint);
+        var urlString = url.ToString().TrimEnd('/');
+        urlString += $"/?{ToQueryString(args)}";   
+        RestClient client = new(new Uri(urlString));
+        RestRequest request = new()
+        {
+            Method = Method.Get
+        };
+        
+        request.AddHeader("Content-Type", "application/json");
+        request.AddHeader("Accept", "application/json");
+        return await client.ExecuteAsync(request);
+    } 
     
     private async Task<RestResponse> ApiCall(string endPoint, Method method, Dictionary<string, string> args = null)
     {
@@ -109,272 +128,136 @@ public class UpbitClient : IUpbitClient
 
         return await client.ExecuteAsync(request);
     }
+    
     public async Task<List<Order.Response>> GetOrder(Order.Request args)
     {
-        try
-        {
-            var response = await ApiCall("order", Method.Get, GenerateApiCallArgs(args));
-            return JsonConvert.DeserializeObject<List<Order.Response>>(response.Content);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await ApiCall("order", Method.Get, GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<List<Order.Response>>(response.Content);
     }
+    
     public async Task<List<Orders.Response>> GetOrders(Orders.Request args)
     {
-        try
-        {
-            var response = await ApiCall("orders", Method.Get, GenerateApiCallArgs(args));
-            return JsonConvert.DeserializeObject<List<Orders.Response>>(response.Content);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await ApiCall("orders", Method.Get, GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<List<Orders.Response>>(response.Content);
     }
+    
     public async Task<List<CoinAddress.Response>> GetCoinAdresses()
     {
-        try
-        {
-            var response = await ApiCall("deposits/coin_addresses", Method.Get);
-            return JsonConvert.DeserializeObject<List<CoinAddress.Response>>(response.Content);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await ApiCall("deposits/coin_addresses", Method.Get);
+        return JsonConvert.DeserializeObject<List<CoinAddress.Response>>(response.Content);
     }
+    
     public async Task<CoinAddress.Response> GetCoinAdress(CoinAddress.Request args)
     {
-        try
-        {
-            var response = await ApiCall("deposits/coin_address", Method.Get, GenerateApiCallArgs(args));
-            return JsonConvert.DeserializeObject<CoinAddress.Response>(response.Content);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await ApiCall("deposits/coin_address", Method.Get, GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<CoinAddress.Response>(response.Content);
     }
+    
     public async Task<Chance.Response> GetChance(Chance.Request args)
     {
-        try
-        {
-            var response = await ApiCall("orders/chance", Method.Get, GenerateApiCallArgs(args));
-            return JsonConvert.DeserializeObject<Chance.Response>(response.Content);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await ApiCall("orders/chance", Method.Get, GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<Chance.Response>(response.Content);
     }
+    
     public async Task<Withdraw.Response> GetWithdraw(Withdraw.Request args)
     {
-        try
-        {
-            var response = await ApiCall("deposit", Method.Get, GenerateApiCallArgs(args));
-            return JsonConvert.DeserializeObject<Withdraw.Response>(response.Content);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await ApiCall("deposit", Method.Get, GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<Withdraw.Response>(response.Content);
     }
+    
     public async Task<List<Withdraws.Response>> GetWithdraws(Withdraws.Request args)
     {
-        try
-        {
-            var response = await ApiCall("deposits", Method.Get, GenerateApiCallArgs(args));
-            return JsonConvert.DeserializeObject<List<Withdraws.Response>>(response.Content);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await ApiCall("deposits", Method.Get, GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<List<Withdraws.Response>>(response.Content);
     }
+    
     public async Task<bool> CancelOrder(CancelOrder.Request args)
     {
-        try
-        {
-            var response = await ApiCall("order", Method.Delete, GenerateApiCallArgs(args));
-            return response.StatusCode == HttpStatusCode.OK;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
+        var response = await ApiCall("order", Method.Delete, GenerateApiCallArgs(args));
+        return response.StatusCode == HttpStatusCode.OK;
     }
+    
     public async Task<List<WalletStatus.Response>> GetWalletStatus()
     {
-        try
-        {
-            var response = await ApiCall("status/wallet", Method.Get);
-            return JsonConvert.DeserializeObject<List<WalletStatus.Response>>(response.Content);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await ApiCall("status/wallet", Method.Get);
+        return JsonConvert.DeserializeObject<List<WalletStatus.Response>>(response.Content);
     }
+    
     public async Task<List<ApiKeys.Response>> GetApiKeys()
     {
-        try
-        {
-            var response = await ApiCall("api_keys", Method.Get);
-            return JsonConvert.DeserializeObject<List<ApiKeys.Response>>(response.Content);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await ApiCall("api_keys", Method.Get);
+        return JsonConvert.DeserializeObject<List<ApiKeys.Response>>(response.Content);
     }
+    
     public async Task<List<Accounts.Response>> GetAccounts()
     {
-        try
-        {
-            var response = await ApiCall("accounts", Method.Get);
-            return JsonConvert.DeserializeObject<List<Accounts.Response>>(response.Content);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await ApiCall("accounts", Method.Get);
+        return JsonConvert.DeserializeObject<List<Accounts.Response>>(response.Content);
     }
+    
     public async Task<GenerateCoinAddress.Response> GenerateCoinAddress(GenerateCoinAddress.Request args)
     {
-        try
-        {
-            var response = await ApiCall("deposits/generate_coin_address", Method.Post, GenerateApiCallArgs(args));
-            return JsonConvert.DeserializeObject<GenerateCoinAddress.Response>(response.Content);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await ApiCall("deposits/generate_coin_address", Method.Post, GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<GenerateCoinAddress.Response>(response.Content);
     }
+    
     public async Task<DepositKrw.Response> DepositKrw(DepositKrw.Request args)
     {
-        try
-        {
-            var response = await ApiCall("deposits/krw", Method.Post, GenerateApiCallArgs(args));
-            return JsonConvert.DeserializeObject<DepositKrw.Response>(response.Content);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await ApiCall("deposits/krw", Method.Post, GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<DepositKrw.Response>(response.Content);
     }
+    
     public async Task<bool> PlaceOrder(PlaceOrder.Request args)
     {
-        try
-        {
-            var response = await ApiCall("orders", Method.Post, GenerateApiCallArgs(args));
-            if (response.StatusCode == HttpStatusCode.Created)
-                return true;
-            else
-                return false;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
+        var response = await ApiCall("orders", Method.Post, GenerateApiCallArgs(args));
+        return response.StatusCode == HttpStatusCode.Created;
     }
-    public static async Task<List<Ticks.Response>> GetTicks(Ticks.Request args)
+    
+    public async Task<List<Ticks.Response>> GetTicks(Ticks.Request args)
     {
-        try
-        {
-            var responseString = await new WebClient().DownloadStringTaskAsync(new Uri($"https://api.upbit.com/v1/trades/ticks?{ToQueryString(GenerateApiCallArgs(args), true)}"));
-            return JsonConvert.DeserializeObject<List<Ticks.Response>>(responseString);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await this.NonAuthApiCall("trades/ticks", GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<List<Ticks.Response>>(response.Content);
     }
-    public static async Task<List<Ticker>> GetTicker(string symbol)
+    
+    public async Task<List<Ticker>> GetTicker(string symbol)
     {
-        try
-        {
-            var responseString = await new WebClient().DownloadStringTaskAsync(new Uri($"https://api.upbit.com/v1/ticker/?markets={symbol}"));
-            return JsonConvert.DeserializeObject<List<Ticker>>(responseString);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await this.NonAuthApiCall($"ticker/?markets={symbol}", null);
+        return JsonConvert.DeserializeObject<List<Ticker>>(response.Content);
     }
-    public static async Task<List<MarketCodes>> GetMarketCodes()
+    
+    public async Task<List<MarketCodes>> GetMarketCodes()
     {
-        try
-        {
-            var responseString = await new WebClient().DownloadStringTaskAsync(new Uri($"https://api.upbit.com/v1/market/all?isDetails=true"));
-            return JsonConvert.DeserializeObject<List<MarketCodes>>(responseString);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await this.NonAuthApiCall("market/all?isDetails=true", null);
+        return JsonConvert.DeserializeObject<List<MarketCodes>>(response.Content);
     }
-    public static async Task<List<DayCandles.Response>> GetDayCandles(DayCandles.Request args)
+    
+    public async Task<List<DayCandles.Response>> GetDayCandles(DayCandles.Request args)
     {
-        try
-        {
-            var responseString = await new WebClient().DownloadStringTaskAsync(new Uri($"https://api.upbit.com/v1/candles/days?{ToQueryString(GenerateApiCallArgs(args), true)}"));
-            return JsonConvert.DeserializeObject<List<DayCandles.Response>>(responseString);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await this.NonAuthApiCall("candles/days", GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<List<DayCandles.Response>>(response.Content);
     }
-    public static async Task<List<Candles.Response>> GetWeekCandles(Candles.Request args)
+    
+    public async Task<List<Candles.Response>> GetWeekCandles(Candles.Request args)
     {
-        try
-        {
-            var responseString = await new WebClient().DownloadStringTaskAsync(new Uri($"https://api.upbit.com/v1/candles/weeks?{ToQueryString(GenerateApiCallArgs(args), true)}"));
-            return JsonConvert.DeserializeObject<List<Candles.Response>>(responseString);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await this.NonAuthApiCall("candles/weeks", GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<List<Candles.Response>>(response.Content);
     }
-    public static async Task<List<Candles.Response>> GetMonthCandles(Candles.Request args)
+    
+    public async Task<List<Candles.Response>> GetMonthCandles(Candles.Request args)
     {
-        try
-        {
-            var responseString = await new WebClient().DownloadStringTaskAsync(new Uri($"https://api.upbit.com/v1/candles/months?{ToQueryString(GenerateApiCallArgs(args), true)}"));
-            return JsonConvert.DeserializeObject<List<Candles.Response>>(responseString);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await this.NonAuthApiCall("candles/months", GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<List<Candles.Response>>(response.Content);
     }
-    public static async Task<List<Candles.Response>> GetMinuteCandles(int unit, Candles.Request args)
+    
+    public async Task<List<Candles.Response>> GetMinuteCandles(int unit, Candles.Request args)
     {
-        try
-        {
-            var responseString = await new WebClient().DownloadStringTaskAsync(new Uri($"https://api.upbit.com/v1/candles/minutes/{unit}?{ToQueryString(GenerateApiCallArgs(args), true)}"));
-            return JsonConvert.DeserializeObject<List<Candles.Response>>(responseString);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await this.NonAuthApiCall($"candles/minutes/{unit}", GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<List<Candles.Response>>(response.Content);
     }
-
-    public static async Task<List<OrderBook.Response>> GetOrderBooks(string symbol)
+    
+    public async Task<List<OrderBook.Response>> GetOrderBooks(string symbol)
     {
-        try
-        {
-            var responseString = await (new WebClient()).DownloadStringTaskAsync(new Uri($"https://api.upbit.com/v1/orderbook/?markets={symbol}"));
-            return JsonConvert.DeserializeObject<List<OrderBook.Response>>(responseString);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var response = await this.NonAuthApiCall($"/orderbook/?markets={symbol}", null);
+        return JsonConvert.DeserializeObject<List<OrderBook.Response>>(response.Content);
     }
 }
