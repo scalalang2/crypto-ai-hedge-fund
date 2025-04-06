@@ -43,7 +43,7 @@ public class AnalystSummaryResponse
     public long TargetPrice { get; set; }
     
     [JsonPropertyName("analystSentiment")]
-    [Description("Analyst sentiment is an integer value between 1 and 5, represent StrongBuy = 0, Buy = 1, Hold = 2, Sell = 3, StrongSell = 4")]
+    [Description("Analyst sentiment is an integer value between 1 and 5, represent StrongBuy = 0, Buy = 1, Neutral = 2, Sell = 3, StrongSell = 4")]
     [Required]
     public int AnalystSentiment { get; set; } = new();
 }

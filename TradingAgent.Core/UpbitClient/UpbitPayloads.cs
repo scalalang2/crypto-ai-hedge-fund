@@ -425,6 +425,7 @@ public class Chance
         public BidAccount bid_account { get; set; }
         public AskAccount ask_account { get; set; }
     }
+    
     public class Request
     {
         public string market { get; set; }

@@ -66,8 +66,8 @@ Key Responsibilities:
         message += "Please analyze the market and provide the following information:\n";
         message += "Respond in JSON format with the following keys:\n";
         message += "- TargetPrice: you thought that the price should be\n";
-        message += "- Confidence: score your confidence level in the interval [1, 10]\n";
-        message += "- AnalystSentiment: Analyst sentiment is an integer value between 0 and 4, represent StrongBuy = 0, Buy = 1, Hold = 2, Sell = 3, StrongSell = 4\n";
+        message += "- Confidence: score your confidence level in the range [1, 10]\n";
+        message += "- AnalystSentiment: Analyst sentiment is an integer value between 0 and 4, represent StrongBuy = 0, Buy = 1, Neutral = 2, Sell = 3, StrongSell = 4\n";
         
         var schemaBuilder = new JsonSchemaBuilder().FromType<AnalystSummaryResponse>();
         var schema = schemaBuilder.Build();
