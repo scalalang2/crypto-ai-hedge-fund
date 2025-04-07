@@ -59,6 +59,8 @@ Key Responsibilities:
         var request = new Candles.Request();
         request.market = item.Market;
         request.count = "100";
+        var responseSchema = new AnalystSummaryResponse();
+        
         var candleData = await this.upbitClient.GetMinuteCandles(30, request);
         
         var message = $"[30 Minute Candle Chart {item.Market}]\n";
@@ -67,20 +69,16 @@ Key Responsibilities:
         
         var currentTime = DateTime.UtcNow.AddHours(9);
         message += $"Current time: {currentTime:yyyy-MM-dd HH:mm:ss} KST\n\n";
-        
-        var schemaBuilder = new JsonSchemaBuilder().FromType<AnalystSummaryResponse>();
-        var schema = schemaBuilder.Build();
-        var schemaAsJson = JsonSerializer.Serialize(schema);
         message += "Please analyze the market and provide the following information:\n";
         message += "Respond in JSON format with the following keys:\n";
-        message += $"{schemaAsJson}";
+        message += $"{responseSchema.GenerateSchemaPrompt("Analyst Summary")}";
         
         var userMessage = new TextMessage(Role.User, message);
         var reply = await this.agent.GenerateReplyAsync(
             messages: [userMessage],
             options: new GenerateReplyOptions
             {
-                OutputSchema = schema,
+                OutputSchema = responseSchema.GetSchema(),
             });
         
         var response = JsonSerializer.Deserialize<AnalystSummaryResponse>(reply.GetContent());

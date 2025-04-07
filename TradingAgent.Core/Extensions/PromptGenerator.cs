@@ -40,4 +40,13 @@ public static class PromptGenerator
         var json = JsonSerializer.Serialize(obj, options);
         return $"[{name} Data]:\n{json}";
     }
+
+    public static JsonSchema GetSchema(this object obj)
+    {
+        var schema = new JsonSchemaBuilder()
+            .FromType(obj.GetType())
+            .Build();
+        
+        return schema;
+    }
 }

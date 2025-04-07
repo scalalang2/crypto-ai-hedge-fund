@@ -77,22 +77,24 @@ Requirements:
     {
         var request = new Chance.Request();
         request.market = item.MarketName;
+        
+        var response = new AgentFinalDecision();
+        
         var chance = await this.upbitClient.GetChance(request);
         var message = $"{chance.GenerateSchemaPrompt("Portfolio")}\n";
         message += $"{chance.GenerateDataPrompt("Portfolio")}\n";
         message += $"{item.GenerateSchemaPrompt("Analyst Summary")}\n";
         message += $"{item.GenerateDataPrompt("Analyst Summary")}\n";
         message += "Please make the final decision.\n";
+        message += "You should respond with following format\n";
+        message += $"{response.GenerateSchemaPrompt("AgentFinalDecision")}";
         
         var userMessage = new TextMessage(Role.User, message);
-        
-        var schemaBuilder = new JsonSchemaBuilder().FromType<AgentFinalDecision>();
-        var schema = schemaBuilder.Build();
         var reply = await this.agent.GenerateReplyAsync(
             messages: [userMessage],
             options: new GenerateReplyOptions
             {
-                OutputSchema = schema,
+                OutputSchema = response.GetSchema(),
             });
         
         var finalDecision = JsonSerializer.Deserialize<AgentFinalDecision>(reply.GetContent());
