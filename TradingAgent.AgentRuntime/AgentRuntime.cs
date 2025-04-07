@@ -48,8 +48,14 @@ public class AgentRuntime(
         _client.MessageReceived += MessageReceivedAsync;
         await _client.StartAsync();
         
-        var message = new InitMessage { Market = "KRW-ETH" };
-        await agentApp.PublishMessageAsync(message, new TopicId(nameof(CfoAgent), source: "agent")).ConfigureAwait(false);
+        // TODO. Configure the interval from config
+        var interval = TimeSpan.FromMinutes(30);
+        var timer = new PeriodicTimer(interval);
+        while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var message = new InitMessage { Market = "KRW-BTC" };
+            await agentApp.PublishMessageAsync(message, new TopicId(nameof(CfoAgent), source: "agent")).ConfigureAwait(false);
+        }
         
         await agentApp.WaitForShutdownAsync().ConfigureAwait(false);
         await Task.Delay(-1, cancellationToken);
