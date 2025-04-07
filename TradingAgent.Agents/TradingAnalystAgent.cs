@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using OpenAI;
 using TradingAgent.Agents.Config;
 using TradingAgent.Agents.Messages;
+using TradingAgent.Core.Extensions;
 using TradingAgent.Core.UpbitClient;
 using IAgent = AutoGen.Core.IAgent;
 
@@ -59,17 +60,17 @@ Key Responsibilities:
         request.market = item.Market;
         request.count = "100";
         var candleData = await this.upbitClient.GetMinuteCandles(30, request);
-        var candleDataAsJson = JsonSerializer.Serialize(candleData);
         
-        var schemaBuilder = new JsonSchemaBuilder().FromType<AnalystSummaryResponse>();
-        var schema = schemaBuilder.Build();
-        var schemaAsJson = JsonSerializer.Serialize(schema);
-        
-        var message = $"30 Minute Candle Chart {item.Market} for market\n{candleDataAsJson}\n\n";
+        var message = $"[30 Minute Candle Chart {item.Market}]\n";
+        message += $"{candleData.GenerateSchemaPrompt("Candle Data")}\n";
+        message += $"{candleData.GenerateDataPrompt("Candle Data")}\n\n";
         
         var currentTime = DateTime.UtcNow.AddHours(9);
         message += $"Current time: {currentTime:yyyy-MM-dd HH:mm:ss} KST\n\n";
         
+        var schemaBuilder = new JsonSchemaBuilder().FromType<AnalystSummaryResponse>();
+        var schema = schemaBuilder.Build();
+        var schemaAsJson = JsonSerializer.Serialize(schema);
         message += "Please analyze the market and provide the following information:\n";
         message += "Respond in JSON format with the following keys:\n";
         message += $"{schemaAsJson}";

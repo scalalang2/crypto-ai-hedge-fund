@@ -18,5 +18,5 @@ public class AgentRuntimeConfiguration
     public string DiscordBotToken { get; set; }
     
     [Required]
-    public string DiscordChannelId { get; set; }
+    public ulong DiscordChannelId { get; set; }
 }

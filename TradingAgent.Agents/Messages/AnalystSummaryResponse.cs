@@ -26,6 +26,11 @@ public enum AnalystSentiment
 [Title("AnalystSummaryResponse")]
 public class AnalystSummaryResponse
 {
+    [JsonPropertyName("market")]
+    [Description("The name of the market.")]
+    [Required]
+    public string MarketName { get; set; } = string.Empty;
+    
     [JsonPropertyName("marketOverview")]
     [Description("Current market conditions")]
     [Required]

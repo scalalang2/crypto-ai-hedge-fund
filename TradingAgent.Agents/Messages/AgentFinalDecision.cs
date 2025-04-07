@@ -12,12 +12,17 @@ public class AgentFinalDecision
     public string Reason { get; set; } = string.Empty;
     
     [JsonPropertyName("DecisionType")]
-    [Description("SELL or BUY")]
+    [Description("SELL, BUY or HOLD")]
     [Required]
     public string DecisionType { get; set; } = string.Empty;
     
-    [JsonPropertyName("Amount")]
-    [Description("amount to buy or sell")]
+    [JsonPropertyName("Volume")]
+    [Description("Quantity of coins to sell when selling at market price.")]
     [Required]
-    public double Amount { get; set; } = 0.0;
+    public double Volume { get; set; } = 0.0;
+    
+    [JsonPropertyName("Price")]
+    [Description("Purchase price (KRW) when buying at market price")]
+    [Required]
+    public double Price { get; set; } = 0.0;
 }

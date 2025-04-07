@@ -28,8 +28,9 @@ public class AgentRuntime(
         appBuilder.Services.AddOptions<LLMConfiguration>()
             .Configure(option =>
             {
-                option.Model = "gpt-4o-mini";
+                option.Model = "gpt-4o";
                 option.OpenAIApiKey = options.Value.OpenAIApiKey;
+                option.DiscordChannelId = options.Value.DiscordChannelId;
             });
 
         appBuilder.Services.AddSingleton<IUpbitClient>(upbitClient);
@@ -51,9 +52,12 @@ public class AgentRuntime(
         // TODO. Configure the interval from config
         var interval = TimeSpan.FromMinutes(30);
         var timer = new PeriodicTimer(interval);
+        
+        var message = new InitMessage { Market = "KRW-ETH" };
+        await agentApp.PublishMessageAsync(message, new TopicId(nameof(CfoAgent), source: "agent")).ConfigureAwait(false);
+        
         while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
         {
-            var message = new InitMessage { Market = "KRW-BTC" };
             await agentApp.PublishMessageAsync(message, new TopicId(nameof(CfoAgent), source: "agent")).ConfigureAwait(false);
         }
         

@@ -1,9 +1,12 @@
+using System.Globalization;
 using System.Text.Json;
 using AutoGen.Core;
 using AutoGen.OpenAI;
 using AutoGen.OpenAI.Extension;
+using Discord.WebSocket;
 using Json.Schema;
 using Json.Schema.Generation;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
@@ -11,6 +14,7 @@ using Microsoft.Extensions.Options;
 using OpenAI;
 using TradingAgent.Agents.Config;
 using TradingAgent.Agents.Messages;
+using TradingAgent.Core.Extensions;
 using TradingAgent.Core.UpbitClient;
 using IAgent = AutoGen.Core.IAgent;
 
@@ -24,31 +28,30 @@ public class CfoAgent :
 {
     private readonly IAgent agent;
     private readonly IUpbitClient upbitClient;
+    private readonly DiscordSocketClient discordClient;
+    private readonly LLMConfiguration config;
 
     public CfoAgent(
         AgentId id,
+        DiscordSocketClient discordSocketClient,
         IUpbitClient upbitClient,
         IAgentRuntime runtime,
         ILogger<CfoAgent> logger,
-        IOptions<LLMConfiguration> config) : base(id, runtime, "Trading Analysis Agent", logger)
+        IOptions<LLMConfiguration> config, DiscordSocketClient discordClient) : base(id, runtime, "Trading Analysis Agent", logger)
     {
         this.upbitClient = upbitClient;
+        this.discordClient = discordClient;
+        this.config = config.Value;
         var client = new OpenAIClient(config.Value.OpenAIApiKey).GetChatClient(config.Value.Model);
         var systemMessage = @"
-You are a professional CFO agent responsible for managing the user's assets. Your primary role is to analyze the user's current financial status, investment portfolio, 
-average purchase price information, and investment analysts' opinions to provide expert advice on buy/sell decisions.\n\n
+You are a professional CFO agent responsible for managing the user's assets. 
+Your primary role is to analyze the user's current financial status, investment portfolio,
 
-## Your Responsibilities:\n
-1. Analyze the user's current financial status and portfolio\n
-2. Compare the average purchase price of each investment asset with the current market price\n
-
-## Decision-Making Process:\n
-1. Objective Data Collection: Financial status, average purchase price, market price, analysts' opinions\n
-2. Risk Assessment: Analyze the risk level and diversification of the current portfolio\n
-3. Opportunity Analysis: Calculate potential profit and loss scenarios\n
-4. Market Timing Consideration: you're specialized in day trading so that you want to sell it if you buy after 1 to 3 hours. 
-
-Always prioritize the user's financial benefit.";
+Requirements:
+1. Data: My Portfolio and 30-minute candlestick data (Open, High, Low, Close, Volume)
+2. Strategy: think yourself
+3. Risk Management: 1:2 Risk/Reward ratio, 1% account risk limit 
+";
         
         this.agent = new OpenAIChatAgent(
             chatClient: client,
@@ -73,25 +76,13 @@ Always prioritize the user's financial benefit.";
     public async ValueTask HandleAsync(AnalystSummaryResponse item, MessageContext messageContext)
     {
         var request = new Chance.Request();
-        request.market = "KRW-ETH";
+        request.market = item.MarketName;
         var chance = await this.upbitClient.GetChance(request);
-        var chanceAsJson = JsonSerializer.Serialize(chance);
-        var chanceSchemaBuilder = new JsonSchemaBuilder().FromType<Chance.Response>();
-        var chanceSchema = chanceSchemaBuilder.Build();
-        var chanceSchemaAsJson = JsonSerializer.Serialize(chanceSchema);
-        
-        var message = $"[Order Availability Schema]\n{chanceSchemaAsJson}\n";
-        message += $"[Order Availability Data]\n{chanceAsJson}\n\n";
-        
-        var summaryAsJson = JsonSerializer.Serialize(item);
-        var summarySchemaBuilder = new JsonSchemaBuilder().FromType<AnalystSummaryResponse>();
-        var summarySchema = summarySchemaBuilder.Build();
-        var summarySchemaAsJson = JsonSerializer.Serialize(summarySchema);
-        message += $"[Analyst's Schema]\n{summarySchemaAsJson}\n";
-        message += $"[Analyst's Summary]\n{summaryAsJson}\n";
+        var message = $"{chance.GenerateSchemaPrompt("Portfolio")}\n";
+        message += $"{chance.GenerateDataPrompt("Portfolio")}\n";
+        message += $"{item.GenerateSchemaPrompt("Analyst Summary")}\n";
+        message += $"{item.GenerateDataPrompt("Analyst Summary")}\n";
         message += "Please make the final decision.\n";
-        
-        _logger.LogInformation("Input Message for AnalystSummary {message}", message);
         
         var userMessage = new TextMessage(Role.User, message);
         
@@ -104,6 +95,74 @@ Always prioritize the user's financial benefit.";
                 OutputSchema = schema,
             });
         
-        JsonSerializer.Deserialize<AgentFinalDecision>(reply.GetContent());
+        var finalDecision = JsonSerializer.Deserialize<AgentFinalDecision>(reply.GetContent());
+        this.ProcessFinalDecision(item.MarketName, finalDecision!);
+    }
+
+    private async Task ProcessFinalDecision(string market, AgentFinalDecision finalDecision)
+    {
+        switch (finalDecision.DecisionType)
+        {
+            case "BUY":
+            {
+                var request = new PlaceOrder.Request
+                {
+                    market = market,
+                    side = "bid",
+                    price = finalDecision.Price.ToString(),
+                    ord_type = "price"
+                };
+                var orderPlaced = await this.upbitClient.PlaceOrder(request);
+                await this.SendOrderPlacedMessage(finalDecision, orderPlaced);
+            }
+                break;
+            case "SELL":
+            {
+                var request = new PlaceOrder.Request
+                {
+                    market = market,
+                    side = "ask",
+                    volume = finalDecision.Volume.ToString(),
+                    ord_type = "market"
+                };
+                var orderPlaced = await this.upbitClient.PlaceOrder(request);
+                await this.SendOrderPlacedMessage(finalDecision, orderPlaced);
+            }
+                break;
+            default:
+            {
+                if (discordClient.GetChannel(this.config.DiscordChannelId) is SocketTextChannel channel)
+                {
+                    var message = "**[Do Nothing]**\n";
+                    message += $"{finalDecision.Reason}\n";
+                    await channel.SendMessageAsync(message);
+                }
+                else
+                {
+                    _logger.LogError("Channel not found");
+                }
+            }
+                break;
+        }
+    }
+
+    private async Task SendOrderPlacedMessage(AgentFinalDecision finalDecision, PlaceOrder.Response orderPlaced)
+    {
+        var discordMessage = $"""
+                              **[Order Placed]**
+                              {finalDecision}
+                              Order ID: {orderPlaced.uuid}
+                              Market: {orderPlaced.market}
+                              Created At: {orderPlaced.created_at}
+                              Volume: {orderPlaced.volume}
+                              """;
+        if (discordClient.GetChannel(this.config.DiscordChannelId) is SocketTextChannel channel)
+        {
+            await channel.SendMessageAsync(discordMessage);
+        }
+        else
+        {
+            _logger.LogError("Channel not found");
+        }
     }
 }
