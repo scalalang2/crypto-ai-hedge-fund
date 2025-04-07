@@ -207,10 +207,10 @@ public class UpbitClient : IUpbitClient
         return JsonConvert.DeserializeObject<DepositKrw.Response>(response.Content);
     }
     
-    public async Task<bool> PlaceOrder(PlaceOrder.Request args)
+    public async Task<PlaceOrder.Response> PlaceOrder(PlaceOrder.Request args)
     {
         var response = await ApiCall("orders", Method.Post, GenerateApiCallArgs(args));
-        return response.StatusCode == HttpStatusCode.Created;
+        return JsonConvert.DeserializeObject<PlaceOrder.Response>(response.Content);
     }
     
     public async Task<List<Ticks.Response>> GetTicks(Ticks.Request args)

@@ -8,18 +8,43 @@ public class DayCandles
 {
     public class Response
     {
+        [Description("Market code")]
         public string market { get; set; }
+
+        [Description("Candle reference time (UTC) - Format: yyyy-MM-dd'T'HH:mm:ss")]
         public DateTime candle_date_time_utc { get; set; }
+
+        [Description("Candle reference time (KST) - Format: yyyy-MM-dd'T'HH:mm:ss")]
         public DateTime candle_date_time_kst { get; set; }
+
+        [Description("Opening price")]
         public int opening_price { get; set; }
+
+        [Description("Highest price")]
         public int high_price { get; set; }
+
+        [Description("Lowest price")]
         public int low_price { get; set; }
+
+        [Description("Closing price (trade price)")]
         public int trade_price { get; set; }
+
+        [Description("Timestamp when the last tick was recorded")]
         public long timestamp { get; set; }
+
+        [Description("Accumulated trade amount")]
         public double candle_acc_trade_price { get; set; }
+
+        [Description("Accumulated trade volume")]
         public double candle_acc_trade_volume { get; set; }
+
+        [Description("Previous day's closing price (based on UTC 0:00)")]
         public int prev_closing_price { get; set; }
+
+        [Description("Price change compared to the previous day's closing price")]
         public int change_price { get; set; }
+
+        [Description("Rate of change compared to the previous day's closing price")]
         public double change_rate { get; set; }
     }
     public class Request
@@ -41,18 +66,39 @@ public class Candles
     }
     public class Response
     {
+        [Description("Market code")]
         public string market { get; set; }
+
+        [Description("Candle reference time (UTC) - Format: yyyy-MM-dd'T'HH:mm:ss")]
         public DateTime candle_date_time_utc { get; set; }
+
+        [Description("Candle reference time (KST) - Format: yyyy-MM-dd'T'HH:mm:ss")]
         public DateTime candle_date_time_kst { get; set; }
+
+        [Description("Opening price")]
         public double opening_price { get; set; }
+
+        [Description("Highest price")]
         public double high_price { get; set; }
+
+        [Description("Lowest price")]
         public double low_price { get; set; }
+
+        [Description("Closing price (trade price)")]
         public double trade_price { get; set; }
+
+        [Description("Timestamp when the last tick was recorded")]
         public long timestamp { get; set; }
+
+        [Description("Accumulated trade amount")]
         public double candle_acc_trade_price { get; set; }
+
+        [Description("Accumulated trade volume")]
         public double candle_acc_trade_volume { get; set; }
+        
         public int unit { get; set; }
     }
+
 }
 
 public class MarketCodes
@@ -353,21 +399,52 @@ public class PlaceOrder
     }
     public class Response
     {
+        [Description("Unique ID of the order")]
         public string uuid { get; set; }
+
+        [Description("Type of order (bid means `buy`/ask means `sell`)")]
         public string side { get; set; }
+
+        [Description("Order method (e.g., limit, price, market)")]
         public string ord_type { get; set; }
+
+        [Description("Currency price at the time of order")]
         public string price { get; set; }
+
+        [Description("Average price of executed trades")]
         public string avg_price { get; set; }
+
+        [Description("Order status")]
         public string state { get; set; }
+
+        [Description("Unique key of the market")]
         public string market { get; set; }
+
+        [Description("Order creation time")]
         public DateTime created_at { get; set; }
+
+        [Description("Order volume input by the user")]
         public string volume { get; set; }
+
+        [Description("Remaining volume after execution")]
         public string remaining_volume { get; set; }
+
+        [Description("Cost reserved for fees")]
         public string reserved_fee { get; set; }
+
+        [Description("Remaining fee amount")]
         public string remaining_fee { get; set; }
+
+        [Description("Fee amount that has been used")]
         public string paid_fee { get; set; }
+
+        [Description("Cost currently locked for the trade")]
         public string locked { get; set; }
+
+        [Description("Executed trade volume")]
         public string executed_volume { get; set; }
+
+        [Description("Number of trades associated with the order")]
         public int trades_count { get; set; }
     }
 }

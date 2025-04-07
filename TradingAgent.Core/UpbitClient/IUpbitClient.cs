@@ -28,7 +28,7 @@ public interface IUpbitClient
     
     public Task<DepositKrw.Response> DepositKrw(DepositKrw.Request args);
     
-    public Task<bool> PlaceOrder(PlaceOrder.Request args);
+    public Task<PlaceOrder.Response> PlaceOrder(PlaceOrder.Request args);
     
     public Task<List<Ticks.Response>> GetTicks(Ticks.Request args);
     
