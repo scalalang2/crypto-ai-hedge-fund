@@ -54,12 +54,11 @@ public class AgentRuntime(
         var timer = new PeriodicTimer(interval);
         
         var message = new InitMessage { Market = "KRW-ETH" };
-        await agentApp.PublishMessageAsync(message, new TopicId(nameof(CfoAgent), source: "agent")).ConfigureAwait(false);
-        
-        while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+        do
         {
-            await agentApp.PublishMessageAsync(message, new TopicId(nameof(CfoAgent), source: "agent")).ConfigureAwait(false);
-        }
+            await agentApp.PublishMessageAsync(message, new TopicId(nameof(CfoAgent), source: "agent"))
+                .ConfigureAwait(false);
+        } while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false));
         
         await agentApp.WaitForShutdownAsync().ConfigureAwait(false);
         await Task.Delay(-1, cancellationToken);
