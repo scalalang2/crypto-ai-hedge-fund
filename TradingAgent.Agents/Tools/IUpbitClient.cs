@@ -1,4 +1,4 @@
-namespace TradingAgent.Core.UpbitClient;
+namespace TradingAgent.Agents.Tools;
 
 public interface IUpbitClient
 {

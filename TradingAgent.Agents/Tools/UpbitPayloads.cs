@@ -2,7 +2,7 @@
 
 using Json.Schema.Generation;
 
-namespace TradingAgent.Core.UpbitClient;
+namespace TradingAgent.Agents.Tools;
 
 public class DayCandles
 {
@@ -47,13 +47,14 @@ public class DayCandles
         [Description("Rate of change compared to the previous day's closing price")]
         public double change_rate { get; set; }
     }
+
     public class Request
     {
         public string market { get; set; }
         public string to { get; set; }
         public string count { get; set; }
         public string convertingPriceUnit { get; set; }
-    }
+    }   
 }
 
 public class Candles

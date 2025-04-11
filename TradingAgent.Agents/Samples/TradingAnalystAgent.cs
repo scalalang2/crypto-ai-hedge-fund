@@ -11,8 +11,8 @@ using Microsoft.Extensions.Options;
 using OpenAI;
 using TradingAgent.Agents.Config;
 using TradingAgent.Agents.Messages;
+using TradingAgent.Agents.Tools;
 using TradingAgent.Core.Extensions;
-using TradingAgent.Core.UpbitClient;
 using IAgent = AutoGen.Core.IAgent;
 
 namespace TradingAgent.Agents;

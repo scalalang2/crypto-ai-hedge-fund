@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 using TradingAgent.Agents;
 using TradingAgent.Agents.Config;
 using TradingAgent.Agents.Messages;
-using TradingAgent.Core.UpbitClient;
+using TradingAgent.Agents.Tools;
 
 namespace TradingAgent.AgentRuntime;
 
@@ -33,13 +33,13 @@ public class AgentRuntime(
                 option.DiscordChannelId = options.Value.DiscordChannelId;
             });
 
+        appBuilder.Services.AddSingleton<FunctionTools>();
         appBuilder.Services.AddSingleton<IUpbitClient>(upbitClient);
         appBuilder.Services.AddSingleton(_client);
         appBuilder.Services.AddLogging(builder => builder.AddConsole());
 
         appBuilder.UseInProcessRuntime(deliverToSelf: true)
-            .AddAgent<CfoAgent>(nameof(CfoAgent))
-            .AddAgent<TradingAnalystAgent>(nameof(TradingAnalystAgent));
+            .AddAgent<FundManagerAgent>(nameof(FundManagerAgent));
         
         var agentApp = await appBuilder.BuildAsync();
         await agentApp.StartAsync();
@@ -56,7 +56,7 @@ public class AgentRuntime(
         var message = new InitMessage { Market = "KRW-ETH" };
         do
         {
-            await agentApp.PublishMessageAsync(message, new TopicId(nameof(CfoAgent), source: "agent"))
+            await agentApp.PublishMessageAsync(message, new TopicId(nameof(FundManagerAgent), source: "agent"))
                 .ConfigureAwait(false);
         } while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false));
         
