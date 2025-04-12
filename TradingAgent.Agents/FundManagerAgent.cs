@@ -20,7 +20,10 @@ public class FundManagerAgent : BaseAgent,
 {
     private readonly IAgent reasoner;
     private readonly IAgent actor;
+    private readonly IAgent summarizer;
     private readonly ILogger<FundManagerAgent> logger;
+    private readonly DiscordSocketClient discordClient;
+    private readonly LLMConfiguration config;
     
     private readonly int maxSteps = 5;
     private readonly Dictionary<string, Func<string, Task<string>>> functionMap;
@@ -77,8 +80,10 @@ SellCoin, BuyCoin or do nothing.
         FunctionTools tools,
         ILogger<FundManagerAgent> logger) : base(id, runtime, "FundManagerAgent", logger)
     {
+        this.discordClient = discordClient;
         this.logger = logger;
-        
+        this.config = config.Value;
+
         var client = new OpenAIClient(config.Value.OpenAIApiKey).GetChatClient(config.Value.Model);
 
         this.functionMap = new Dictionary<string, Func<string, Task<string>>>
@@ -112,6 +117,13 @@ SellCoin, BuyCoin or do nothing.
             .RegisterMessageConnector()
             .RegisterMiddleware(toolCallMiddleware)
             .RegisterPrintMessage();
+
+        this.summarizer = new OpenAIChatAgent(
+                client, 
+                "summarizer", 
+                systemMessage: "You are a summarizer agent. Please summarize the conversation and provide a concise overview.")
+            .RegisterMessageConnector()
+            .RegisterPrintMessage();
     }
 
     public async ValueTask HandleAsync(InitMessage item, MessageContext messageContext)
@@ -141,14 +153,20 @@ SellCoin, BuyCoin or do nothing.
             chatHistory.Add(reasoning);
             chatHistory.Add(action);
         }
-    }
-    
-    private string CreatePrompt(string input)
-    {
-        var tools = string.Join(", ", this.functionMap.Keys);
-        return Prompt
-            .Replace("{input}", input)
-            .Replace("{tools}", tools);
+        
+        // summarize and send a message to discord
+        var summary = await this.summarizer.GenerateReplyAsync(chatHistory);
+        var summaryContent = summary.GetContent();
+        _logger.LogInformation("Summary: {Summary}", summaryContent);
+        var channel = await this.discordClient.GetChannelAsync(this.config.DiscordChannelId) as SocketTextChannel;
+        if (channel != null)
+        {
+            await channel.SendMessageAsync($"**Summary**\n{summaryContent}");
+        }
+        else
+        {
+            _logger.LogError("Discord channel not found.");
+        }
     }
     
     private string ExtractFinalAnswer(string content)
@@ -160,5 +178,4 @@ SellCoin, BuyCoin or do nothing.
         }
         return "No final answer found.";
     }
-
 }
