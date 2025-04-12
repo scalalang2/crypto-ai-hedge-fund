@@ -15,15 +15,15 @@ namespace TradingAgent.Agents.Tools;
 /// </summary>
 public class UpbitClient : IUpbitClient
 {
-    private readonly string _publicKey;
+    private readonly string _accessKey;
     private readonly string _secretKey;
     private static readonly Uri _baseUrl = new("https://api.upbit.com/v1/");
     
-    public UpbitClient(string publicKey, string secretKey)
+    public UpbitClient(string accessKey, string secretKey)
     {
-        if (string.IsNullOrWhiteSpace(publicKey)) { throw new ArgumentNullException(nameof(publicKey)); }
+        if (string.IsNullOrWhiteSpace(accessKey)) { throw new ArgumentNullException(nameof(accessKey)); }
         if (string.IsNullOrWhiteSpace(secretKey)) { throw new ArgumentNullException(nameof(secretKey)); }
-        _publicKey = publicKey;
+        _accessKey = accessKey;
         _secretKey = secretKey;
     }
     
@@ -34,6 +34,9 @@ public class UpbitClient : IUpbitClient
         var apiCallArgs = new Dictionary<string, string>();
         foreach (var property in properties)
         {
+            // ignore null
+            if (property.GetValue(obj) is null)
+                continue;
             apiCallArgs.Add(property.Name, (string)property.GetValue(obj));
         }
         return apiCallArgs;
@@ -64,7 +67,7 @@ public class UpbitClient : IUpbitClient
         var queryString = ToQueryString(args);
         var payload = new Dictionary<string, string>
         {
-            { "access_key" , _publicKey },
+            { "access_key" , _accessKey },
             { "nonce" , Guid.NewGuid().ToString() },
             { "query_hash" , ToSHA512(queryString) },
             { "query_hash_alg" , "SHA512" },
@@ -109,7 +112,7 @@ public class UpbitClient : IUpbitClient
 
         var authenticationToken = GenerateAuthenticationToken(args);
         Uri url = new(_baseUrl, endPoint);
-        RestClient? client;
+        RestClient client = new(url);
         RestRequest request = new();
         request.Method = method;
         request.AddHeader("Content-Type", "application/json");
@@ -122,7 +125,6 @@ public class UpbitClient : IUpbitClient
         }
         else
         {
-            client = new(url);
             request.AddJsonBody(args);
         }
 
@@ -210,6 +212,10 @@ public class UpbitClient : IUpbitClient
     public async Task<PlaceOrder.Response> PlaceOrder(PlaceOrder.Request args)
     {
         var response = await ApiCall("orders", Method.Post, GenerateApiCallArgs(args));
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            throw new Exception($"Error placing order: {response}");
+        }
         return JsonConvert.DeserializeObject<PlaceOrder.Response>(response.Content);
     }
     

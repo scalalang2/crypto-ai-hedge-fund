@@ -18,16 +18,16 @@ public class DayCandles
         public DateTime candle_date_time_kst { get; set; }
 
         [Description("Opening price")]
-        public int opening_price { get; set; }
+        public double opening_price { get; set; }
 
         [Description("Highest price")]
-        public int high_price { get; set; }
+        public double high_price { get; set; }
 
         [Description("Lowest price")]
-        public int low_price { get; set; }
+        public double low_price { get; set; }
 
         [Description("Closing price (trade price)")]
-        public int trade_price { get; set; }
+        public double trade_price { get; set; }
 
         [Description("Timestamp when the last tick was recorded")]
         public long timestamp { get; set; }
@@ -39,10 +39,10 @@ public class DayCandles
         public double candle_acc_trade_volume { get; set; }
 
         [Description("Previous day's closing price (based on UTC 0:00)")]
-        public int prev_closing_price { get; set; }
+        public double prev_closing_price { get; set; }
 
         [Description("Price change compared to the previous day's closing price")]
-        public int change_price { get; set; }
+        public double change_price { get; set; }
 
         [Description("Rate of change compared to the previous day's closing price")]
         public double change_rate { get; set; }

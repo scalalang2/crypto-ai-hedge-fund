@@ -18,7 +18,7 @@ public partial class FunctionTools
     /// <summary>
     /// Get 30 minutes candlestick data for the market
     /// </summary>
-    /// <param name="market">available markets are KRW-BTC, KRW-ETH and KRW-SOL</param>
+    /// <param name="market">available markets are KRW-SOL</param>
     /// <returns>30 minutes candlestick data</returns>
     [Function]
     public async Task<string> Get30MinuteCandlestickData(string market)
@@ -26,17 +26,18 @@ public partial class FunctionTools
         var request = new Candles.Request
         {
             market = market,
-            count = "100"
+            count = "20"
         };
         
         var response = await this._upbitClient.GetMinuteCandles(30, request);
-        return response.GenerateDataPrompt("30 Minute Candlestick Data");
+        await Task.Delay(1000);
+        return response.GenerateSchemaAndDataPrompt("30 Minute Candlestick Data");
     }
     
     /// <summary>
     /// Get 60 minutes candlestick data for the market
     /// </summary>
-    /// <param name="market">available markets are KRW-BTC, KRW-ETH and KRW-SOL</param>
+    /// <param name="market">available markets are KRW-SOL</param>
     /// <returns>30 minutes candlestick data</returns>
     [Function]
     public async Task<string> Get60MinuteCandlestickData(string market)
@@ -44,17 +45,18 @@ public partial class FunctionTools
         var request = new Candles.Request
         {
             market = market,
-            count = "100"
+            count = "20"
         };
         
         var response = await this._upbitClient.GetMinuteCandles(60, request);
-        return response.GenerateDataPrompt("60 Minute Candlestick Data");
+        await Task.Delay(1000);
+        return response.GenerateSchemaAndDataPrompt("60 Minute Candlestick Data");
     }
     
     /// <summary>
     /// Get day candlestick data for the market
     /// </summary>
-    /// <param name="market">available markets are KRW-BTC, KRW-ETH and KRW-SOL</param>
+    /// <param name="market">available markets are KRW-SOL</param>
     /// <returns>30 minutes candlestick data</returns>
     [Function]
     public async Task<string> GetDayCandlestickData(string market)
@@ -62,18 +64,19 @@ public partial class FunctionTools
         var request = new DayCandles.Request
         {
             market = market,
-            count = "100"
+            count = "10"
         };
         
         var response = await this._upbitClient.GetDayCandles(request);
-        return response.GenerateDataPrompt("Day Candlestick Data");
+        await Task.Delay(1000);
+        return response.GenerateSchemaAndDataPrompt("Day Candlestick Data");
     }
 
     /// <summary>
     /// Returns the current portfolio of the user given market
     /// 
     /// </summary>
-    /// <param name="market">available markets are KRW-BTC, KRW-ETH and KRW-SOL</param>
+    /// <param name="market">available markets are KRW-SOL</param>
     /// <returns>Portfolio data for the market</returns>
     [Function]
     public async Task<string> GetMyPortfolio(string market)
@@ -82,50 +85,57 @@ public partial class FunctionTools
         request.market
             = market;
         var response = await this._upbitClient.GetChance(request);
-        return response.GenerateDataPrompt("Portfolio");
+        await Task.Delay(1000);
+        return response.GenerateSchemaAndDataPrompt("Portfolio");
     }
 
     /// <summary>
     /// Purchases a specified amount of cryptocurrency in the given market using KRW.
     /// This method uses a price order type to buy the desired KRW amount at market price.
     /// </summary>
-    /// <param name="market">The market code to trade in (e.g., KRW-BTC)</param>
+    /// <param name="market">The market code to trade in (e.g., KRW-SOL)</param>
     /// <param name="krwAmount">The amount of KRW to spend on the purchase</param>
     /// <returns>A response object containing the order result information</returns>
     [Function]
     public async Task<string> BuyCoin(string market, double krwAmount)
     {
+        var priceAmount = string.Format("{0:F2}", krwAmount);
+        
         var request = new PlaceOrder.Request
         {
             market = market,
             side = "bid",
-            price = krwAmount.ToString(),
+            price = priceAmount,
             ord_type = "price"
         };
         
         var response = await this._upbitClient.PlaceOrder(request);
-        return response.GenerateDataPrompt("Order Result");
+        await Task.Delay(1000);
+        return response.GenerateSchemaAndDataPrompt("Order Result");
     }
     
     /// <summary>
     /// Sells a specified amount of cryptocurrency in the given market.
     /// This method uses a market order type to sell the specified coin amount at the current market price.
     /// </summary>
-    /// <param name="market">The market code to trade in (e.g., KRW-BTC)</param>
+    /// <param name="market">The market code to trade in (e.g., KRW-SOL)</param>
     /// <param name="coinAmount">The amount of cryptocurrency to sell</param>
     /// <returns>A response object containing the order result information</returns>
     [Function]
     public async Task<string> SellCoin(string market, double coinAmount)
     {
+        var coinAmountAsString = string.Format("{0:F2}", coinAmount);
+        
         var request = new PlaceOrder.Request
         {
             market = market,
             side = "ask",
-            volume = coinAmount.ToString(),
+            volume = coinAmountAsString,
             ord_type = "market"
         };
         
         var response = await this._upbitClient.PlaceOrder(request);
-        return response.GenerateDataPrompt("Order Result");
+        await Task.Delay(1000);
+        return response.GenerateSchemaAndDataPrompt("Order Result");
     }
 }

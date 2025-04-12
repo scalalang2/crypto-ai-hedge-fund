@@ -56,7 +56,7 @@ public class AgentRuntime(
         var message = new InitMessage { Market = "KRW-ETH" };
         do
         {
-            await agentApp.PublishMessageAsync(message, new TopicId(nameof(FundManagerAgent), source: "agent"))
+            await agentApp.PublishMessageAsync(message, new TopicId(nameof(FundManagerAgent)))
                 .ConfigureAwait(false);
         } while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false));
         
