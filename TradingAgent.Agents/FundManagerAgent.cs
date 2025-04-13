@@ -168,6 +168,9 @@ SellCoin, BuyCoin or do nothing.
                 _logger.LogInformation("Final answer: {FinalAnswer}", finalAnswer);
                 var finalAction = await trader.GenerateReplyAsync(messages: [reasoning]);
                 this._logger.LogInformation("Action {Action}: {finalAction}", i, finalAction);
+                
+                chatHistory.Add(reasoning);
+                chatHistory.Add(finalAction);
                 break;
             }
             
