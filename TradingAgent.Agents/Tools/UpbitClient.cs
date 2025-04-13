@@ -131,6 +131,12 @@ public class UpbitClient : IUpbitClient
         return await client.ExecuteAsync(request);
     }
     
+    public async Task<List<ClosedOrderHistory.Response>> GetOrderHistory(ClosedOrderHistory.Request args)
+    {
+        var response = await ApiCall("orders/closed", Method.Get, GenerateApiCallArgs(args));
+        return JsonConvert.DeserializeObject<List<ClosedOrderHistory.Response>>(response.Content);
+    }
+    
     public async Task<List<Order.Response>> GetOrder(Order.Request args)
     {
         var response = await ApiCall("order", Method.Get, GenerateApiCallArgs(args));

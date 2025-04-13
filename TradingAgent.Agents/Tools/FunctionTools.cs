@@ -90,6 +90,26 @@ public partial class FunctionTools
     }
 
     /// <summary>
+    /// Get the order history for the market
+    /// </summary>
+    /// <param name="market">The market code to trade in (e.g., KRW-SOL)</param>
+    /// <returns>Your order history</returns>
+    [Function]
+    public async Task<string> GetOrderHistory(string market)
+    {
+        var request = new ClosedOrderHistory.Request
+        {
+            market = market,
+            state = "done",
+            limit = 100,
+        };
+        
+        var response = await this._upbitClient.GetOrderHistory(request);
+        await Task.Delay(1000);
+        return response.GenerateSchemaAndDataPrompt("Order History");
+    }
+
+    /// <summary>
     /// Purchases a specified amount of cryptocurrency in the given market using KRW.
     /// This method uses a price order type to buy the desired KRW amount at market price.
     /// </summary>

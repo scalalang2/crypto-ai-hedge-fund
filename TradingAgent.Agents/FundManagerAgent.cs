@@ -49,7 +49,7 @@ Observation: the invoke result of the tool
 ... (this process can repeat multiple times, once for each required tool)
 
 Once you have the final answer, provide the final answer in the following format:
-Final Answer: Make a decision to buy, sell or hold (execute BuyCoin, SellCoin or do nothing)
+Final Answer: Make a decision to buy, sell or hold (execute BuyCoin with amount, SellCoin with amount or do nothing)
 
 Important rules:
 - All decisions MUST be based on actual data obtained through tools. Do not rely on assumptions or guesses.
@@ -69,9 +69,6 @@ You need to carefully see the content of the message and decide whether to invok
 
 You can invoke the following tools:
 {tools}
-
-If the given message include 'Final Answer:' then, you need to invoke one of the tools
-SellCoin, BuyCoin or do nothing.
 ";
 
     private const string TraderPrompt = @"
@@ -99,6 +96,7 @@ SellCoin, BuyCoin or do nothing.
         this.actorFunctionMap = new Dictionary<string, Func<string, Task<string>>>
         {
             { nameof(tools.GetMyPortfolio), tools.GetMyPortfolioWrapper },
+            { nameof(tools.GetOrderHistory), tools.GetOrderHistoryWrapper },
             // { nameof(tools.Get30MinuteCandlestickData), tools.Get30MinuteCandlestickDataWrapper },
             // { nameof(tools.GetDayCandlestickData), tools.GetDayCandlestickDataWrapper },
             { nameof(tools.Get60MinuteCandlestickData), tools.Get60MinuteCandlestickDataWrapper },
@@ -122,6 +120,7 @@ SellCoin, BuyCoin or do nothing.
             .RegisterMiddleware(new FunctionCallMiddleware(
                 functions: [
                     tools.GetMyPortfolioFunctionContract,
+                    tools.GetOrderHistoryFunctionContract,
                     // tools.Get30MinuteCandlestickDataFunctionContract,
                     // tools.GetDayCandlestickDataFunctionContract,
                     tools.Get60MinuteCandlestickDataFunctionContract,

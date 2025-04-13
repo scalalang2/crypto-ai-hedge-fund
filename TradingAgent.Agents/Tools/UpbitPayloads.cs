@@ -260,6 +260,54 @@ public class Order
         public string identifier { get; set; }
     }
 }
+
+public class ClosedOrderHistory
+{
+    public class Request 
+    {
+        public string market { get; set; }
+        public string state { get; set; }
+        public int limit { get; set; }
+        public string order_by { get; set; }
+    }
+    
+    public class Response
+    {
+        [Description("Unique ID of the order")]
+        public string uuid { get; set; }
+        
+        [Description("Type of order (bid means `buy`/ask means `sell`)")]
+        public string side { get; set; }
+        
+        [Description("Order method (e.g., limit, price, market)")]
+        public string ord_type { get; set; }
+        
+        [Description("Currency price at the time of order")]
+        public string price { get; set; }
+        
+        [Description("state of the order")]
+        public string state { get; set; }
+        
+        [Description("Unique key of the market")]
+        public string market { get; set; }
+        
+        [Description("Order creation time")]
+        public DateTime created_at { get; set; }
+        
+        [Description("Order volume input by the user")]
+        public string volume { get; set; }
+        
+        [Description("Remaining volume after execution")]
+        public string executed_volume { get; set; }
+        
+        [Description("Executed volume")]
+        public string executed_funds { get; set; }
+        
+        [Description("number of trades associated with the order")]
+        public int trades_count { get; set; }
+    }
+}
+
 public class Orders
 {
     public class Request
