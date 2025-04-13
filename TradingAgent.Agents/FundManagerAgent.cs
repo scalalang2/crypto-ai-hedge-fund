@@ -20,13 +20,15 @@ public class FundManagerAgent : BaseAgent,
 {
     private readonly IAgent reasoner;
     private readonly IAgent actor;
+    private readonly IAgent trader;
     private readonly IAgent summarizer;
     private readonly ILogger<FundManagerAgent> logger;
     private readonly DiscordSocketClient discordClient;
     private readonly LLMConfiguration config;
     
     private readonly int maxSteps = 5;
-    private readonly Dictionary<string, Func<string, Task<string>>> functionMap;
+    private readonly Dictionary<string, Func<string, Task<string>>> actorFunctionMap;
+    private readonly Dictionary<string, Func<string, Task<string>>> traderFunctionMap;
 
     private const string Prompt = @"
 You're very talented fund manager, your final goal is to make decision to buy, sell or hold.
@@ -71,6 +73,14 @@ You can invoke the following tools:
 If the given message include 'Final Answer:' then, you need to invoke one of the tools
 SellCoin, BuyCoin or do nothing.
 ";
+
+    private const string TraderPrompt = @"
+    You are a trader agent, you need to serve as a tool executor.
+    Your fund manager will send you a message and you need to decide which tool to invoke.
+
+    You can invoke the following tools:
+    {tools} and DoNothing
+";
     
     public FundManagerAgent(
         DiscordSocketClient discordClient,
@@ -86,36 +96,48 @@ SellCoin, BuyCoin or do nothing.
 
         var client = new OpenAIClient(config.Value.OpenAIApiKey).GetChatClient(config.Value.Model);
 
-        this.functionMap = new Dictionary<string, Func<string, Task<string>>>
+        this.actorFunctionMap = new Dictionary<string, Func<string, Task<string>>>
         {
-            { nameof(tools.BuyCoin), tools.BuyCoinWrapper },
-            { nameof(tools.SellCoin), tools.SellCoinWrapper },
             { nameof(tools.GetMyPortfolio), tools.GetMyPortfolioWrapper },
             // { nameof(tools.Get30MinuteCandlestickData), tools.Get30MinuteCandlestickDataWrapper },
             // { nameof(tools.GetDayCandlestickData), tools.GetDayCandlestickDataWrapper },
             { nameof(tools.Get60MinuteCandlestickData), tools.Get60MinuteCandlestickDataWrapper },
         };
         
-        var prompt = Prompt.Replace("{tools}", string.Join(", ", this.functionMap.Keys));
+        this.traderFunctionMap = new Dictionary<string, Func<string, Task<string>>>
+        {
+            { nameof(tools.BuyCoin), tools.BuyCoinWrapper },
+            { nameof(tools.SellCoin), tools.SellCoinWrapper },
+        };
+        
+        var allTools = this.actorFunctionMap.Keys.Concat(this.traderFunctionMap.Keys);
+        var prompt = Prompt.Replace("{tools}", string.Join(", ", allTools));
         this.reasoner = new OpenAIChatAgent(client, "reasoner", systemMessage: prompt)
             .RegisterMessageConnector()
             .RegisterPrintMessage();
         
-        var toolCallMiddleware = new FunctionCallMiddleware(
-            functions: [
-                tools.BuyCoinFunctionContract,
-                tools.SellCoinFunctionContract,
-                tools.GetMyPortfolioFunctionContract,
-                // tools.Get30MinuteCandlestickDataFunctionContract,
-                // tools.GetDayCandlestickDataFunctionContract,
-                tools.Get60MinuteCandlestickDataFunctionContract,
-            ],
-            functionMap: this.functionMap);
-        
-        var actorPrompt = ActorPrompt.Replace("{tools}", string.Join(", ", this.functionMap.Keys));
+        var actorPrompt = ActorPrompt.Replace("{tools}", string.Join(", ", this.actorFunctionMap.Keys));
         this.actor = new OpenAIChatAgent(client, "actor", systemMessage: actorPrompt)
             .RegisterMessageConnector()
-            .RegisterMiddleware(toolCallMiddleware)
+            .RegisterMiddleware(new FunctionCallMiddleware(
+                functions: [
+                    tools.GetMyPortfolioFunctionContract,
+                    // tools.Get30MinuteCandlestickDataFunctionContract,
+                    // tools.GetDayCandlestickDataFunctionContract,
+                    tools.Get60MinuteCandlestickDataFunctionContract,
+                ],
+                functionMap: this.actorFunctionMap))
+            .RegisterPrintMessage();
+        
+        var traderPrompt = TraderPrompt.Replace("{tools}", string.Join(", ", this.traderFunctionMap.Keys));
+        this.trader = new OpenAIChatAgent(client, "trader", systemMessage: traderPrompt)
+            .RegisterMessageConnector()
+            .RegisterMiddleware(new FunctionCallMiddleware(
+                functions: [
+                    tools.BuyCoinFunctionContract,
+                    tools.SellCoinFunctionContract,
+                ],
+                functionMap: this.traderFunctionMap))
             .RegisterPrintMessage();
 
         this.summarizer = new OpenAIChatAgent(
@@ -144,7 +166,7 @@ SellCoin, BuyCoin or do nothing.
                 // 최종 답변 추출 및 반환
                 var finalAnswer = this.ExtractFinalAnswer(reasoningContent);
                 _logger.LogInformation("Final answer: {FinalAnswer}", finalAnswer);
-                var finalAction = await actor.GenerateReplyAsync(messages: [reasoning]);
+                var finalAction = await trader.GenerateReplyAsync(messages: [reasoning]);
                 this._logger.LogInformation("Action {Action}: {finalAction}", i, finalAction);
                 break;
             }
