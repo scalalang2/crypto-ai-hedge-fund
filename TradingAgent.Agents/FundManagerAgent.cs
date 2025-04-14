@@ -110,7 +110,7 @@ You can invoke the following tools:
         
         var allTools = this.actorFunctionMap.Keys.Concat(this.traderFunctionMap.Keys);
         var prompt = Prompt.Replace("{tools}", string.Join(", ", allTools));
-        this.reasoner = new OpenAIChatAgent(client, "fund manager", systemMessage: prompt)
+        this.reasoner = new OpenAIChatAgent(client, "fundManager", systemMessage: prompt)
             .RegisterMessageConnector()
             .RegisterPrintMessage();
         
