@@ -50,7 +50,7 @@ public class AgentRuntime(
         await _client.StartAsync();
         
         // TODO. Configure the interval from config
-        var interval = TimeSpan.FromMinutes(30);
+        var interval = TimeSpan.FromMinutes(60);
         var timer = new PeriodicTimer(interval);
         
         var message = new InitMessage { Market = "KRW-ETH" };

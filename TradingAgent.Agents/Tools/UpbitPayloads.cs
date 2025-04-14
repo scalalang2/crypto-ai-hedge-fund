@@ -267,7 +267,7 @@ public class ClosedOrderHistory
     {
         public string market { get; set; }
         public string state { get; set; }
-        public int limit { get; set; }
+        public string limit { get; set; }
         public string order_by { get; set; }
     }
     

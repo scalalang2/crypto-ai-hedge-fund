@@ -90,7 +90,7 @@ public partial class FunctionTools
     }
 
     /// <summary>
-    /// Get the order history for the market
+    /// Get the order history that the fund manager has made.
     /// </summary>
     /// <param name="market">The market code to trade in (e.g., KRW-SOL)</param>
     /// <returns>Your order history</returns>
@@ -101,7 +101,7 @@ public partial class FunctionTools
         {
             market = market,
             state = "done",
-            limit = 100,
+            limit = "15",
         };
         
         var response = await this._upbitClient.GetOrderHistory(request);
