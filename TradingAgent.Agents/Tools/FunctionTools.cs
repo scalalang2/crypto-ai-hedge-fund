@@ -52,8 +52,8 @@ public partial class FunctionTools
         await Task.Delay(1000);
         
         var result = $"""
-                      this is 60 minutes candlestick data for market {market}
-                      Time | Open | High | Low | Close | Volume | Accumulated Amount
+                      this is 60 minutes candlestick data for market {market}\n
+                      Time | Open | High | Low | Close | Volume | Accumulated Amount\n
                       """;
 
         foreach (var item in response)
@@ -82,8 +82,8 @@ public partial class FunctionTools
         await Task.Delay(1000);
         
         var result = $"""
-this is day candlestick data for market {market}
-Time | Open | High | Low | Close | Volume | Accumulated Amount
+this is day candlestick data for market {market}\n
+Time | Open | High | Low | Close | Volume | Accumulated Amount\n
 """;
 
         foreach (var item in response)
@@ -130,9 +130,9 @@ Time | Open | High | Low | Close | Volume | Accumulated Amount
         await Task.Delay(1000);
         
         var result = $"""
-    This is the order history that the fund manager has made.
-    Side : Type of order (bid means `buy`/ask means `sell`)
-    Market | Time | Side | Price | Volume                  
+    This is the order history that the fund manager has made.\n
+    Side : Type of order (bid means `buy`/ask means `sell`)\n
+    Market | Time | Side | Price | Volume \n
 """;
         
         foreach (var item in response)
@@ -191,5 +191,16 @@ Time | Open | High | Low | Close | Volume | Accumulated Amount
         var response = await this._upbitClient.PlaceOrder(request);
         await Task.Delay(1000);
         return response.GenerateSchemaAndDataPrompt("Order Result");
+    }
+
+    /// <summary>
+    /// Hold the coin in the given market.
+    /// </summary>
+    /// <param name="market">The market code to trade in (e.g., KRW-SOL)</param>
+    /// <returns></returns>
+    [Function]
+    public Task<string> HoldCoin(string market)
+    {
+        return Task.FromResult($"hold coin in {market}"); 
     }
 }

@@ -105,6 +105,7 @@ You can invoke the following tools:
         {
             { nameof(tools.BuyCoin), tools.BuyCoinWrapper },
             { nameof(tools.SellCoin), tools.SellCoinWrapper },
+            { nameof(tools.HoldCoin), tools.HoldCoinWrapper },
         };
         
         var allTools = this.actorFunctionMap.Keys.Concat(this.traderFunctionMap.Keys);
@@ -134,6 +135,7 @@ You can invoke the following tools:
                 functions: [
                     tools.BuyCoinFunctionContract,
                     tools.SellCoinFunctionContract,
+                    tools.HoldCoinFunctionContract,
                 ],
                 functionMap: this.traderFunctionMap))
             .RegisterPrintMessage();
