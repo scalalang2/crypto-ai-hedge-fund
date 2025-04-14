@@ -53,12 +53,12 @@ public partial class FunctionTools
         
         var result = $"""
                       this is 60 minutes candlestick data for market {market}
-                      [Time, Open, High, Low, Close, Volume, Accumulated Amount]
+                      Time | Open | High | Low | Close | Volume | Accumulated Amount
                       """;
 
         foreach (var item in response)
         {
-            result += $"[{item.candle_date_time_kst}, {item.opening_price}, {item.high_price}, {item.low_price}, {item.trade_price}, {item.candle_acc_trade_volume}, {item.candle_acc_trade_price}]";
+            result += $"{item.candle_date_time_kst} | {item.opening_price} | {item.high_price} | {item.low_price} | {item.trade_price} | {item.candle_acc_trade_volume} | {item.candle_acc_trade_price}\n";
         }
 
         return result;

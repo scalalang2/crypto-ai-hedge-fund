@@ -21,7 +21,6 @@ public class FundManagerAgent : BaseAgent,
     private readonly IAgent reasoner;
     private readonly IAgent actor;
     private readonly IAgent trader;
-    private readonly IAgent summarizer;
     private readonly ILogger<FundManagerAgent> logger;
     private readonly DiscordSocketClient discordClient;
     private readonly LLMConfiguration config;
@@ -138,13 +137,6 @@ You can invoke the following tools:
                 ],
                 functionMap: this.traderFunctionMap))
             .RegisterPrintMessage();
-
-        this.summarizer = new OpenAIChatAgent(
-                client, 
-                "summarizer", 
-                systemMessage: "You are a summarizer agent. Please summarize the conversation and provide a concise overview.")
-            .RegisterMessageConnector()
-            .RegisterPrintMessage();
     }
 
     public async ValueTask HandleAsync(InitMessage item, MessageContext messageContext)
@@ -160,7 +152,7 @@ You can invoke the following tools:
             var reasoningContent = reasoning.GetContent();
             _logger.LogInformation("Reasoning step {Step}: {Content}", i, reasoningContent);
             
-            if (reasoningContent.Contains("Final Answer:"))
+            if (reasoningContent.Contains("Final Answer:") || reasoningContent.Contains("Final Decision:"))
             {
                 // 최종 답변 추출 및 반환
                 var finalAnswer = this.ExtractFinalAnswer(reasoningContent);
@@ -170,26 +162,22 @@ You can invoke the following tools:
                 
                 chatHistory.Add(reasoning);
                 chatHistory.Add(finalAction);
+                
+                var channel = await this.discordClient.GetChannelAsync(this.config.DiscordChannelId) as SocketTextChannel;
+                if (channel != null)
+                {
+                    await channel.SendMessageAsync($"**Summary**\n{reasoningContent}");
+                }
+                else
+                {
+                    _logger.LogError("Discord channel not found.");
+                }
                 break;
             }
             
             var action = await actor.GenerateReplyAsync(messages: [reasoning]);
             chatHistory.Add(reasoning);
             chatHistory.Add(action);
-        }
-        
-        // summarize and send a message to discord
-        var summary = await this.summarizer.GenerateReplyAsync(chatHistory);
-        var summaryContent = summary.GetContent();
-        _logger.LogInformation("Summary: {Summary}", summaryContent);
-        var channel = await this.discordClient.GetChannelAsync(this.config.DiscordChannelId) as SocketTextChannel;
-        if (channel != null)
-        {
-            await channel.SendMessageAsync($"**Summary**\n{summaryContent}");
-        }
-        else
-        {
-            _logger.LogError("Discord channel not found.");
         }
     }
     
