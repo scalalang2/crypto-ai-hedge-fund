@@ -16,6 +16,8 @@ public class DayCandles
 
         [Description("Candle reference time (KST) - Format: yyyy-MM-dd'T'HH:mm:ss")]
         public DateTime candle_date_time_kst { get; set; }
+        
+        
 
         [Description("Opening price")]
         public double opening_price { get; set; }
@@ -495,6 +497,16 @@ public class PlaceOrder
 
         [Description("Number of trades associated with the order")]
         public int trades_count { get; set; }
+
+        public string GetPrompt()
+        {
+            return $"""
+side : {side} // Type of order (bid means `buy`/ask means `sell`)
+market : {market} // Unique key of the market
+price : {price} // Currency price at the time of order
+volume : {volume} // Order volume
+""";
+        }
     }
 }
 

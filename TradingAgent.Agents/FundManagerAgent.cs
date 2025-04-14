@@ -96,8 +96,7 @@ You can invoke the following tools:
         {
             { nameof(tools.GetMyPortfolio), tools.GetMyPortfolioWrapper },
             { nameof(tools.GetOrderHistory), tools.GetOrderHistoryWrapper },
-            // { nameof(tools.Get30MinuteCandlestickData), tools.Get30MinuteCandlestickDataWrapper },
-            // { nameof(tools.GetDayCandlestickData), tools.GetDayCandlestickDataWrapper },
+            { nameof(tools.GetDayCandlestickData), tools.GetDayCandlestickDataWrapper },
             { nameof(tools.Get60MinuteCandlestickData), tools.Get60MinuteCandlestickDataWrapper },
         };
         
@@ -121,8 +120,7 @@ You can invoke the following tools:
                 functions: [
                     tools.GetMyPortfolioFunctionContract,
                     tools.GetOrderHistoryFunctionContract,
-                    // tools.Get30MinuteCandlestickDataFunctionContract,
-                    // tools.GetDayCandlestickDataFunctionContract,
+                    tools.GetDayCandlestickDataFunctionContract,
                     tools.Get60MinuteCandlestickDataFunctionContract,
                 ],
                 functionMap: this.actorFunctionMap))

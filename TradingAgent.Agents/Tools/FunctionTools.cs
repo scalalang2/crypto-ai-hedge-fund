@@ -1,6 +1,5 @@
 using AutoGen.Core;
 using Microsoft.Extensions.Logging;
-using TradingAgent.Core.Extensions;
 
 namespace TradingAgent.Agents.Tools;
 
@@ -13,25 +12,6 @@ public partial class FunctionTools
     {
         _upbitClient = upbitClient;
         _logger = logger;
-    }
-    
-    /// <summary>
-    /// Get 30 minutes candlestick data for the market
-    /// </summary>
-    /// <param name="market">available markets are KRW-SOL</param>
-    /// <returns>30 minutes candlestick data</returns>
-    [Function]
-    public async Task<string> Get30MinuteCandlestickData(string market)
-    {
-        var request = new Candles.Request
-        {
-            market = market,
-            count = "20"
-        };
-        
-        var response = await this._upbitClient.GetMinuteCandles(30, request);
-        await Task.Delay(1000);
-        return response.GenerateSchemaAndDataPrompt("30 Minute Candlestick Data");
     }
     
     /// <summary>
@@ -108,7 +88,27 @@ Time | Open | High | Low | Close | Volume | Accumulated Amount\n
             = market;
         var response = await this._upbitClient.GetChance(request);
         await Task.Delay(1000);
-        return response.GenerateSchemaAndDataPrompt("Portfolio");
+        var result = $"""
+[BidAccount]
+Currency = {response.bid_account.currency}
+Available amount = {response.bid_account.balance}
+Average buy price = {response.bid_account.avg_buy_price}
+Unit currency = {response.bid_account.unit_currency}
+
+[AskAccount]
+Currency = {response.ask_account.currency}
+Available amount = {response.ask_account.balance}
+Average buy price = {response.ask_account.avg_buy_price}
+Unit currency = {response.ask_account.unit_currency}
+
+Fee for bid = {response.bid_fee}
+Fee for ask = {response.ask_fee}
+
+bid means buy and ask means sell
+You can place orders using 'Available amount' - 'AskFee'.
+
+""";
+        return result;
     }
 
     /// <summary>
@@ -130,9 +130,10 @@ Time | Open | High | Low | Close | Volume | Accumulated Amount\n
         await Task.Delay(1000);
         
         var result = $"""
-    This is the order history that the fund manager has made.\n
-    Side : Type of order (bid means `buy`/ask means `sell`)\n
-    Market | Time | Side | Price | Volume \n
+    This is the order history that the fund manager has made.
+    Side : Type of order (bid means `buy`/ask means `sell`)
+    Market | Time | Side | Price | Volume 
+    
 """;
         
         foreach (var item in response)
@@ -165,7 +166,7 @@ Time | Open | High | Low | Close | Volume | Accumulated Amount\n
         
         var response = await this._upbitClient.PlaceOrder(request);
         await Task.Delay(1000);
-        return response.GenerateSchemaAndDataPrompt("Order Result");
+        return response.GetPrompt();
     }
     
     /// <summary>
@@ -190,7 +191,7 @@ Time | Open | High | Low | Close | Volume | Accumulated Amount\n
         
         var response = await this._upbitClient.PlaceOrder(request);
         await Task.Delay(1000);
-        return response.GenerateSchemaAndDataPrompt("Order Result");
+        return response.GetPrompt();
     }
 
     /// <summary>
