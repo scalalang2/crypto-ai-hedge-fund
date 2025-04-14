@@ -9,6 +9,9 @@ public class AgentRuntimeConfiguration
     public string OpenAIApiKey { get; set; }
     
     [Required]
+    public string OpenAIModel { get; set; } = "gpt-4o";
+    
+    [Required]
     public string UpbitAccessKey { get; set; }
     
     [Required]

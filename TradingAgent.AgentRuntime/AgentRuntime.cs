@@ -28,7 +28,7 @@ public class AgentRuntime(
         appBuilder.Services.AddOptions<LLMConfiguration>()
             .Configure(option =>
             {
-                option.Model = "gpt-4o";
+                option.Model = options.Value.OpenAIModel;
                 option.OpenAIApiKey = options.Value.OpenAIApiKey;
                 option.DiscordChannelId = options.Value.DiscordChannelId;
             });
