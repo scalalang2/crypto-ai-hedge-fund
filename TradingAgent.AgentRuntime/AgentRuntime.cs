@@ -7,14 +7,14 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TradingAgent.Agents;
-using TradingAgent.Agents.Config;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Tools;
+using TradingAgent.Core.Config;
 
 namespace TradingAgent.AgentRuntime;
 
 public class AgentRuntime(
-    IOptions<AgentRuntimeConfiguration> options,
+    IOptions<AppConfig> options,
     ILogger<AgentRuntime> logger)
     : IHostedService
 {
@@ -25,14 +25,6 @@ public class AgentRuntime(
         var upbitClient = new UpbitClient(options.Value.UpbitAccessKey, options.Value.UpbitSecretKey);
         
         var appBuilder = new AgentsAppBuilder();
-        appBuilder.Services.AddOptions<LLMConfiguration>()
-            .Configure(option =>
-            {
-                option.Model = options.Value.OpenAIModel;
-                option.OpenAIApiKey = options.Value.OpenAIApiKey;
-                option.DiscordChannelId = options.Value.DiscordChannelId;
-            });
-
         appBuilder.Services.AddSingleton<FunctionTools>();
         appBuilder.Services.AddSingleton<IUpbitClient>(upbitClient);
         appBuilder.Services.AddSingleton(_client);

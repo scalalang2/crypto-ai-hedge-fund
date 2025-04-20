@@ -7,9 +7,9 @@ using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAI;
-using TradingAgent.Agents.Config;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Tools;
+using TradingAgent.Core.Config;
 using IAgent = AutoGen.Core.IAgent;
 
 namespace TradingAgent.Agents;
@@ -23,7 +23,7 @@ public class FundManagerAgent : BaseAgent,
     private readonly IAgent trader;
     private readonly ILogger<FundManagerAgent> logger;
     private readonly DiscordSocketClient discordClient;
-    private readonly LLMConfiguration config;
+    private readonly AppConfig config;
     
     private readonly int maxSteps = 5;
     private readonly Dictionary<string, Func<string, Task<string>>> actorFunctionMap;
@@ -80,7 +80,7 @@ You can invoke the following tools:
     
     public FundManagerAgent(
         DiscordSocketClient discordClient,
-        IOptions<LLMConfiguration> config,
+        IOptions<AppConfig> config,
         AgentId id, 
         IAgentRuntime runtime, 
         FunctionTools tools,
@@ -90,7 +90,7 @@ You can invoke the following tools:
         this.logger = logger;
         this.config = config.Value;
 
-        var client = new OpenAIClient(config.Value.OpenAIApiKey).GetChatClient(config.Value.Model);
+        var client = new OpenAIClient(config.Value.OpenAIApiKey).GetChatClient(config.Value.LeaderAIModel);
 
         this.actorFunctionMap = new Dictionary<string, Func<string, Task<string>>>
         {
