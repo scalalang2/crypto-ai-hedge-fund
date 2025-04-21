@@ -45,7 +45,7 @@ public class AgentRuntime(
         var interval = TimeSpan.FromMinutes(60);
         var timer = new PeriodicTimer(interval);
         
-        var message = new InitMessage { Market = "KRW-ETH" };
+        var message = new InitMessage { };
         do
         {
             await agentApp.PublishMessageAsync(message, new TopicId(nameof(FundManagerAgent)))
