@@ -80,10 +80,11 @@ Respond in the following format:
         var response = new MarketAnalyzeResponse();
         var schemaBuilder = new JsonSchemaBuilder().FromType<MarketAnalysisResult>();
         var schema = schemaBuilder.Build();
-        var sb = new StringBuilder();
         
         foreach (var market in this._config.AvailableMarkets)
         {
+            var sb = new StringBuilder();
+            
             var candleResponse = await this._upbitClient.GetMinuteCandles(60, new Candles.Request
             {
                 market = market,
@@ -119,8 +120,7 @@ Respond in the following format:
             analysisResult.Market = market;
             response.Results.Add(analysisResult);
         }
-        
-        this._logger.LogInformation("Market analysis completed. Results: {@Results}", response.Results);
+
         await this.PublishMessageAsync(response, new TopicId(nameof(LeaderAgent)));
     }
 }

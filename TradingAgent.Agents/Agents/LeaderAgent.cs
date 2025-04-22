@@ -6,6 +6,7 @@ using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using OpenAI;
+using OpenAI.Responses;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Tools;
 using TradingAgent.Core.Config;
@@ -95,17 +96,28 @@ Step 2:
         sb.AppendLine("Please make a decision based on the following opinions:");
         foreach (var result in item.Results)
         {
-            sb.AppendLine($"[{result.Market}])");
+            sb.AppendLine($"[{result.Market}]");
             sb.AppendLine($"{result.Analysis}");
             sb.AppendLine($"(Sentiment: {result.Sentiment}, Confidence: {result.Confidence})");
             sb.AppendLine();
         }
 
-        sb.AppendLine("[Your Portfolio]");
-        
-        // var request = new Chance.Request();
-        // request.market = market;
-        // var response = await this._upbitClient.GetChance(request);
+        sb.AppendLine("[Portfolio]");
+        sb.AppendLine("Market | Amount | Avg Price");
+        var totalKrw = 0d;
+        foreach (var market in this.config.AvailableMarkets)
+        {
+            var request = new Chance.Request();
+            request.market = market;
+            var response = await this._upbitClient.GetChance(request);
+
+            sb.AppendLine($"{market} | {response.ask_account.balance} | {response.ask_account.avg_buy_price}");
+            totalKrw = Convert.ToDouble(response.bid_account.balance);
+        }
+
+        sb.AppendLine();
+        sb.AppendLine($"Available Balance : {totalKrw} KRW");
+        sb.AppendLine();
         
         var promptMessage = new TextMessage(Role.User, sb.ToString());
         var chatHistory = new List<IMessage> { promptMessage };
