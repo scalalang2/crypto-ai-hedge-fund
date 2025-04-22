@@ -84,8 +84,7 @@ Time | Open | High | Low | Close | Volume | Accumulated Amount\n
     public async Task<string> GetMyPortfolio(string market)
     {
         var request = new Chance.Request();
-        request.market
-            = market;
+        request.market = market;
         var response = await this._upbitClient.GetChance(request);
         await Task.Delay(1000);
         var result = $"""

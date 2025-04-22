@@ -26,6 +26,7 @@ public class AgentRuntime(
         var upbitClient = new UpbitClient(options.Value.UpbitAccessKey, options.Value.UpbitSecretKey);
         
         var appBuilder = new AgentsAppBuilder();
+        appBuilder.Services.AddSingleton(options.Value);
         appBuilder.Services.AddSingleton<FunctionTools>();
         appBuilder.Services.AddSingleton<IUpbitClient>(upbitClient);
         appBuilder.Services.AddSingleton(_client);
@@ -62,7 +63,7 @@ public class AgentRuntime(
 
     private Task MessageReceivedAsync(SocketMessage arg)
     {
-        logger.LogInformation("Message received: {Message}", arg.Content);
+        logger.LogInformation("Message received in Discord: {Message}", arg.Content);
         return Task.CompletedTask;
     }
 

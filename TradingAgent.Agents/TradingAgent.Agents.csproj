@@ -13,6 +13,7 @@
       <PackageReference Include="Microsoft.AutoGen.AgentChat" Version="0.4.0-dev.3" />
       <PackageReference Include="Microsoft.AutoGen.Contracts" Version="0.4.0-dev.3" />
       <PackageReference Include="Microsoft.AutoGen.Core" Version="0.4.0-dev.3" />
+      <PackageReference Include="Skender.Stock.Indicators" Version="2.6.1" />
     </ItemGroup>
     
     <ItemGroup>

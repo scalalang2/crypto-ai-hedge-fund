@@ -5,5 +5,5 @@ namespace TradingAgent.Agents.Messages;
 /// </summary>
 public class SummaryRequest
 {
-    public string ChatHistory { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
 }

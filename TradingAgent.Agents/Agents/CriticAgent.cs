@@ -23,14 +23,13 @@ public class CriticAgent : BaseAgent
     public CriticAgent(
         AgentId id, 
         IAgentRuntime runtime, 
-        string description, 
         ILogger<BaseAgent> logger, 
-        AppConfig config) : base(id, runtime, description, logger)
+        AppConfig config) : base(id, runtime, "critic", logger)
     {
         this.config = config;
         
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.LeaderAIModel);
-        var agent = new OpenAIChatAgent(client, "Leader", systemMessage: Prompt)
+        var agent = new OpenAIChatAgent(client, "critic", systemMessage: Prompt)
             .RegisterMessageConnector()
             .RegisterPrintMessage();
     }

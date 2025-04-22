@@ -1,3 +1,4 @@
+using System.Text;
 using AutoGen.Core;
 using AutoGen.OpenAI;
 using AutoGen.OpenAI.Extension;
@@ -6,7 +7,9 @@ using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using OpenAI;
 using TradingAgent.Agents.Messages;
+using TradingAgent.Agents.Tools;
 using TradingAgent.Core.Config;
+using IAgent = AutoGen.Core.IAgent;
 
 namespace TradingAgent.Agents.Agents;
 
@@ -19,12 +22,20 @@ public class LeaderAgent : BaseAgent,
     IHandle<MarketAnalyzeResponse>
 {
     private readonly AppConfig config;
+    private readonly IUpbitClient _upbitClient;
+    private readonly AutoGen.Core.IAgent _agent;
+    
     private const string Prompt = @"
 You're LEADER Agent and alos very talented financial decision maker.
 You'll be given a current portfolio of crypto assets and a list of other agents' opinions.
 
 Your task is to analyze the opinions and make a final decision on whether to buy, sell, or hold each asset in the portfolio.
 You should consider the opinions of other agents, but ultimately make the final decision yourself.
+
+## Important Notes
+- You MUST keep at least 100,000 KRW in your account.
+- You MUST not make any decisions that would result in a loss of more than 10% of your total portfolio value.
+- Your profit target is 10% of your total portfolio value.
 
 ## Opinions
 Opinions are will be given in the following format:
@@ -59,14 +70,15 @@ Step 2:
     public LeaderAgent(
         AgentId id, 
         IAgentRuntime runtime, 
-        string description, 
         ILogger<BaseAgent> logger, 
-        AppConfig config) : base(id, runtime, description, logger)
+        AppConfig config, 
+        IUpbitClient upbitClient) : base(id, runtime, "leader", logger)
     {
         this.config = config;
-        
+        this._upbitClient = upbitClient;
+
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.LeaderAIModel);
-        var agent = new OpenAIChatAgent(client, "Leader", systemMessage: Prompt)
+        this._agent = new OpenAIChatAgent(client, "Leader", systemMessage: Prompt)
             .RegisterMessageConnector()
             .RegisterPrintMessage();
     }
@@ -77,8 +89,63 @@ Step 2:
         await this.PublishMessageAsync(new MarketAnalyzeRequest(), new TopicId(nameof(MarketAgent)));
     }
     
-    public ValueTask HandleAsync(MarketAnalyzeResponse item, MessageContext messageContext)
+    public async ValueTask HandleAsync(MarketAnalyzeResponse item, MessageContext messageContext)
     {
-        throw new NotImplementedException();
+        var sb = new StringBuilder();
+        sb.AppendLine("Please make a decision based on the following opinions:");
+        foreach (var result in item.Results)
+        {
+            sb.AppendLine($"[{result.Market}])");
+            sb.AppendLine($"{result.Analysis}");
+            sb.AppendLine($"(Sentiment: {result.Sentiment}, Confidence: {result.Confidence})");
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("[Your Portfolio]");
+        
+        // var request = new Chance.Request();
+        // request.market = market;
+        // var response = await this._upbitClient.GetChance(request);
+        
+        var promptMessage = new TextMessage(Role.User, sb.ToString());
+        var chatHistory = new List<IMessage> { promptMessage };
+        const int maxStep = 5;
+        for (var i = 0; i < maxStep; i++)
+        {
+            var reasoning = await this._agent.GenerateReplyAsync(chatHistory);
+            var reasoningContent = reasoning.GetContent();
+
+            if (reasoningContent.Contains("Final Answer:") || reasoningContent.Contains("Final Decision:"))
+            {
+                // 최종 답변 추출 및 반환
+                var finalAnswer = this.ExtractFinalAnswer(reasoningContent);
+                _logger.LogInformation("Final answer: {FinalAnswer}", finalAnswer);
+
+                var summaryRequest = new SummaryRequest
+                {
+                    Message = reasoningContent,
+                };
+                var tradeRequest = new TradeRequest
+                {
+                    Message = finalAnswer,
+                };
+                
+                await this.PublishMessageAsync(summaryRequest, new TopicId(nameof(SummarizerAgent)));
+                await this.PublishMessageAsync(tradeRequest, new TopicId(nameof(TraderAgent)));
+                break;
+            }
+
+            chatHistory.Add(reasoning);
+        }
+    }
+    
+    private string ExtractFinalAnswer(string content)
+    {
+        var finalAnswerIndex = content.IndexOf("Final Answer:", StringComparison.Ordinal);
+        if (finalAnswerIndex >= 0)
+        {
+            return content[(finalAnswerIndex + "Final Answer:".Length)..].Trim();
+        }
+        return "No final answer found.";
     }
 }

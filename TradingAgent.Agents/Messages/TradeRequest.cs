@@ -2,5 +2,5 @@ namespace TradingAgent.Agents.Messages;
 
 public class TradeRequest
 {
-    public string Request { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
 }

@@ -500,11 +500,15 @@ public class PlaceOrder
 
         public string GetPrompt()
         {
+            var amount = string.IsNullOrEmpty(price) ? volume : price;
+            
             return $"""
-side : {side} // Type of order (bid means `buy`/ask means `sell`)
-market : {market} // Unique key of the market
-price : {price} // Currency price at the time of order
-volume : {volume} // Order volume
+side is a string that indicates the type of order (bid means `buy`/ask means `sell`)
+amount is a string that indicates the amount of order
+
+market : {market}
+side : {side}
+amount : {amount}
 """;
         }
     }
