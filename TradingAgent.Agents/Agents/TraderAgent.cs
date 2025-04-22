@@ -5,6 +5,7 @@ using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using OpenAI;
+using TradingAgent.Agents.Tools;
 using TradingAgent.Core.Config;
 
 namespace TradingAgent.Agents.Agents;
@@ -16,8 +17,15 @@ namespace TradingAgent.Agents.Agents;
 public class TraderAgent : BaseAgent
 {
     private readonly AppConfig config;
+    private readonly AutoGen.Core.IAgent actor;
+    private readonly Dictionary<string, Func<string, Task<string>>> traderFunctionMap;
 
     private const string Prompt = @"
+You are a trader agent, you need to serve as a tool executor.
+Your fund manager will send you a message and you need to decide which tool to invoke.
+
+You can invoke the following tools:
+{tools} and DoNothing
 ";
     
     public TraderAgent(
@@ -25,13 +33,29 @@ public class TraderAgent : BaseAgent
         IAgentRuntime runtime, 
         string description, 
         ILogger<BaseAgent> logger, 
+        FunctionTools tools,
         AppConfig config) : base(id, runtime, description, logger)
     {
         this.config = config;
-        
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.LeaderAIModel);
-        var agent = new OpenAIChatAgent(client, "Leader", systemMessage: Prompt)
+        
+        this.traderFunctionMap = new Dictionary<string, Func<string, Task<string>>>
+        {
+            { nameof(tools.BuyCoin), tools.BuyCoinWrapper },
+            { nameof(tools.SellCoin), tools.SellCoinWrapper },
+            { nameof(tools.HoldCoin), tools.HoldCoinWrapper },
+        };
+        
+        var traderPrompt = Prompt.Replace("{tools}", string.Join(", ", this.traderFunctionMap.Keys));
+        this.actor = new OpenAIChatAgent(client, "trader", systemMessage: traderPrompt)
             .RegisterMessageConnector()
+            .RegisterMiddleware(new FunctionCallMiddleware(
+                functions: [
+                    tools.BuyCoinFunctionContract,
+                    tools.SellCoinFunctionContract,
+                    tools.HoldCoinFunctionContract,
+                ],
+                functionMap: this.traderFunctionMap))
             .RegisterPrintMessage();
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TradingAgent.Agents;
+using TradingAgent.Agents.Agents;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Tools;
 using TradingAgent.Core.Config;
@@ -31,7 +32,12 @@ public class AgentRuntime(
         appBuilder.Services.AddLogging(builder => builder.AddConsole());
 
         appBuilder.UseInProcessRuntime(deliverToSelf: true)
-            .AddAgent<FundManagerAgent>(nameof(FundManagerAgent));
+            .AddAgent<LeaderAgent>(nameof(LeaderAgent))
+            .AddAgent<MarketAgent>(nameof(MarketAgent))
+            .AddAgent<CriticAgent>(nameof(CriticAgent))
+            .AddAgent<TraderAgent>(nameof(TraderAgent))
+            .AddAgent<RiskManagerAgent>(nameof(RiskManagerAgent))
+            .AddAgent<SummarizerAgent>(nameof(SummarizerAgent));
         
         var agentApp = await appBuilder.BuildAsync();
         await agentApp.StartAsync();
@@ -48,12 +54,10 @@ public class AgentRuntime(
         var message = new InitMessage { };
         do
         {
-            await agentApp.PublishMessageAsync(message, new TopicId(nameof(FundManagerAgent)))
-                .ConfigureAwait(false);
+            await agentApp.PublishMessageAsync(message, new TopicId(nameof(LeaderAgent)), cancellationToken: cancellationToken).ConfigureAwait(false);
         } while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false));
         
         await agentApp.WaitForShutdownAsync().ConfigureAwait(false);
-        await Task.Delay(-1, cancellationToken);
     }
 
     private Task MessageReceivedAsync(SocketMessage arg)
