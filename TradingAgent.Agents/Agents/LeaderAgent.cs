@@ -61,8 +61,8 @@ Step 1:
 - Thought: The market trend is currently high bearish.
 
 Step 2:
-- Question: How much SOL should I sell to secure 10,000 KRW profit?
-- Thought: I have 1.0 SOL in my portfolio. Current SOL price = 50,000 KRW. Selling 0.2 SOL yields 10,000 KRW
+- Question: How much SOL should I sell to secure 1,000 KRW profit?
+- Thought: I have 1.0 SOL in my portfolio. Current SOL price = 50,000 KRW. Selling 0.02 SOL yields 1,000 KRW, but minimum selling amount is 0.1 SOL.
 
 ... (This process can repeat multiple times if needed)
 
@@ -70,7 +70,7 @@ Step 2:
 # KRW-SOL:
 SOL is trading at ₩198,535. Given recent bearish sentiment and agents’ negative outlook, 
 I recommend selling a portion of SOL to reduce downside risk and secure profits. 
-Therefore, I'll Sell 0.2 SOL 
+Therefore, I'll Sell 0.1 SOL 
 
 # KRW-ETH:
 Hold the current position. The market sentiment is neutral, and the price is stable.
