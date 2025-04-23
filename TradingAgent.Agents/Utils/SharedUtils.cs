@@ -8,7 +8,7 @@ public static class SharedUtils
     public static async Task<string> GetCurrentPositionPrompt(IUpbitClient upbitClient, List<string> availableMarket)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("Market | Amount | Avg Price | Buying Fee | Selling Fee | Minimum Buying Amount | Minimum Selling Amount");
+        sb.AppendLine("Market | Amount | Avg Price | Buying Fee | Selling Fee | Minimum Buying Amount (KRW) | Minimum Selling Amount (KRW)");
         var totalKrw = 0d;
         foreach (var market in availableMarket)
         {

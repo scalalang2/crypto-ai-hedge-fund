@@ -62,7 +62,7 @@ Step 1:
 
 Step 2:
 - Question: How much SOL should I sell to secure 1,000 KRW profit?
-- Thought: I have 1.0 SOL in my portfolio. Current SOL price = 50,000 KRW. Selling 0.02 SOL yields 1,000 KRW, but minimum selling amount is 0.1 SOL.
+- Thought: I have 1.0 SOL, and the price is 50,000 KRW per SOL. Selling 0.02 SOL gives me 1,000 KRW, but since the minimum selling amount is 5,000 KRW, I need to sell enough SOL to get at least 5,000 KRW.
 
 ... (This process can repeat multiple times if needed)
 
