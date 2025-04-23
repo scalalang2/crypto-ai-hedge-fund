@@ -220,7 +220,7 @@ public class UpbitClient : IUpbitClient
         var response = await ApiCall("orders", Method.Post, GenerateApiCallArgs(args));
         if (response.StatusCode != HttpStatusCode.Created)
         {
-            throw new Exception($"Error placing order: {response}");
+            throw new Exception($"Error placing order: {response.Content}");
         }
         return JsonConvert.DeserializeObject<PlaceOrder.Response>(response.Content);
     }
