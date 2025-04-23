@@ -36,7 +36,6 @@ You should consider the opinions of other agents, but ultimately make the final 
 
 
 ## Key Constraints
-- Minimum Balance: Always maintain ≥100,000 KRW in the account.
 - Loss Limit: Never risk losing >10% of the total portfolio value.
 - Profit Target: Aim for a 10% overall portfolio gain.
 
