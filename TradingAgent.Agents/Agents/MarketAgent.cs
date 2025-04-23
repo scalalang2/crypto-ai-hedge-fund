@@ -97,10 +97,12 @@ Respond in the following format:
             sb.AppendLine();
 
             var quote = candleResponse.ToQuote();
-            var sma = quote.GetSma(20);
-            foreach (var smaResult in sma)
+            var band = quote.GetBollingerBands(20);
+            sb.AppendLine($"- BollingerBandResult for {market}");
+            sb.AppendLine("Date | SMA | UpperBand | LowerBand | PercentB | Z-Score | BandWidth");
+            foreach (var bandResult in band)
             {
-                sb.AppendLine($"- SMA on {smaResult.Date:d} was {smaResult.Sma:N4}");
+                sb.AppendLine($"{bandResult.Date} | {bandResult.Sma} | {bandResult.UpperBand} | {bandResult.LowerBand} | {bandResult.PercentB} | {bandResult.ZScore} | {bandResult.Width}");
             }
 
             var prompt = new TextMessage(Role.User, sb.ToString());
