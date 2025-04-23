@@ -1,4 +1,7 @@
-# AutogenCryptoTrader.NET
+# Crypto AI Hedge Fund
+[ai-hedge-fund](https://github.com/virattt/ai-hedge-fund)룰 암호화폐 버전으로 만든 실험용 프로젝트입니다.
+
+절대 투자에 사용하지 마세요
 
 <img width="1224" alt="image" src="https://github.com/user-attachments/assets/25f49753-3a3b-4512-ba9f-962cf50a357a" />
 
