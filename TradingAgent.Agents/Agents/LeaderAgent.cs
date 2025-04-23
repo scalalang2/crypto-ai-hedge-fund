@@ -34,10 +34,11 @@ Analyze a given crypto portfolio and other agents' opinions to decide buy/sell/h
 Your task is to analyze the opinions and make a final decision on whether to buy, sell, or hold each asset in the portfolio.
 You should consider the opinions of other agents, but ultimately make the final decision yourself.
 
-
 ## Key Constraints
 - Loss Limit: Never risk losing >10% of the total portfolio value.
 - Profit Target: Aim for a 10% overall portfolio gain.
+- When buying an asset, specify the amount in KRW (e.g., Buy KRW-SOL with 5,000 KRW).
+- When selling an asset, specify the amount of the asset (e.g., Sell 0.1 SOL).
 
 ## Input Format
 [OPINION]
@@ -50,7 +51,7 @@ You should consider the opinions of other agents, but ultimately make the final 
 - Question: make a question yourself
 - Thought: your thought given the question
 ( this process can repeat multiple times if needed )
-- Final Answer: Make a decision to buy, sell or hold (execute BuyCoin with amount and market, SellCoin with amount and market or do nothing)
+- Final Answer: Make a final decision on whether to buy, sell, or hold each asset in the portfolio.
 
 ## Example
 [THOUGHT]
