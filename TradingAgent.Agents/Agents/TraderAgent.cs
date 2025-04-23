@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using OpenAI;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Tools;
+using TradingAgent.Agents.Utils;
 using TradingAgent.Core.Config;
 
 namespace TradingAgent.Agents.Agents;
@@ -21,13 +22,18 @@ public class TraderAgent : BaseAgent, IHandle<TradeRequest>
     private readonly AppConfig config;
     private readonly AutoGen.Core.IAgent actor;
     private readonly Dictionary<string, Func<string, Task<string>>> traderFunctionMap;
+    private readonly IUpbitClient _upbitClient;
 
     private const string Prompt = @"
 You are a trader agent, you need to serve as a tool executor.
 Your fund manager will send you a message and you need to decide which tool to invoke.
 
 You can invoke the following tools:
-{tools} and DoNothing
+{tools}
+
+## Important Constraints
+When using BuyCoin/SellCoin, enter the amount of money you want to use.
+For example, if SOL costs 50,000 KRW and you want to buy 0.2 SOL, you should enter 10,000 as the amount.
 ";
     
     public TraderAgent(
@@ -35,9 +41,11 @@ You can invoke the following tools:
         IAgentRuntime runtime, 
         ILogger<BaseAgent> logger, 
         FunctionTools tools,
-        AppConfig config) : base(id, runtime, "trader", logger)
+        AppConfig config, 
+        IUpbitClient upbitClient) : base(id, runtime, "trader", logger)
     {
         this.config = config;
+        this._upbitClient = upbitClient;
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.LeaderAIModel);
         
         this.traderFunctionMap = new Dictionary<string, Func<string, Task<string>>>
@@ -64,6 +72,9 @@ You can invoke the following tools:
     {
         var sb = new StringBuilder();
         sb.AppendLine("Let's analyze the message from the leader and decide what to do.");
+        sb.AppendLine("[Position]");
+        sb.AppendLine(await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets));
+        sb.AppendLine();
         sb.AppendLine("The message is:");
         sb.AppendLine(item.Message);
         var message = new TextMessage(Role.User, sb.ToString());

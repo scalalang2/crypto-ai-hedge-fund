@@ -25,7 +25,7 @@ public class SummarizerAgent : BaseAgent, IHandle<SummaryRequest>
 
     private const string Prompt = @"
 You are a summarizer agent.
-Your task is to summarize the messages at most 10 lines.
+Your task is to summarize the messages at most 10-15 lines.
 ";
     
     public SummarizerAgent(

@@ -9,6 +9,7 @@ using OpenAI;
 using OpenAI.Responses;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Tools;
+using TradingAgent.Agents.Utils;
 using TradingAgent.Core.Config;
 using IAgent = AutoGen.Core.IAgent;
 
@@ -27,23 +28,23 @@ public class LeaderAgent : BaseAgent,
     private readonly AutoGen.Core.IAgent _agent;
     
     private const string Prompt = @"
-You're LEADER Agent and alos very talented financial decision maker.
-You'll be given a current portfolio of crypto assets and a list of other agents' opinions.
+You are LEADER Agent, an expert financial decision-maker specializing in cryptocurrency markets.
+Analyze a given crypto portfolio and other agents' opinions to decide buy/sell/hold actions for each asset.
 
 Your task is to analyze the opinions and make a final decision on whether to buy, sell, or hold each asset in the portfolio.
 You should consider the opinions of other agents, but ultimately make the final decision yourself.
 
-## Important Notes
-- You MUST keep at least 100,000 KRW in your account.
-- You MUST not make any decisions that would result in a loss of more than 10% of your total portfolio value.
-- Your profit target is 10% of your total portfolio value.
 
-## Opinions
-Opinions are will be given in the following format:
+## Key Constraints
+- Minimum Balance: Always maintain ≥100,000 KRW in the account.
+- Loss Limit: Never risk losing >10% of the total portfolio value.
+- Profit Target: Aim for a 10% overall portfolio gain.
 
+## Input Format
 [OPINION]
-- Agent Name: The name of the agent providing the opinion
-- Opinion by (Agent Name): The opinion of the agent (e.g., Bullish, Confidence Level : 80% and etc)
+- Agent Name: [Name]
+- KRW-BTC Market: [High Bullish/Bullish/High Bearish/Bearish/Neutral], Confidence: [0.0-1.0]
+- KRW-BTC Market Reasning: [Reasoning]
 
 ## Use the following format:
 [THOUGHT]
@@ -57,17 +58,27 @@ Opinions are will be given in the following format:
 
 Step 1:
 - Question: Should I perceive the current market trend as bullish or bearish?
-- Thought: The market trend is currently bullish, as indicated by the recent price increase and positive sentiment from other agents.
+- Thought: The market trend is currently high bearish.
 
 Step 2:
-- Question: How much should I buy in KRW-BTC?
-- Thought: I have 100,000 KRW available for investment, and I believe that investing 50% in KRW-BTC is a good strategy given the current market conditions.
+- Question: How much SOL should I sell to secure 10,000 KRW profit?
+- Thought: I have 1.0 SOL in my portfolio. Current SOL price = 50,000 KRW. Selling 0.2 SOL yields 10,000 KRW
 
-- Final Answer: Buy KRW-BTC with 50,000 KRW
+... (This process can repeat multiple times if needed)
+
+- Final Answer: 
+# KRW-SOL:
+SOL is trading at ₩198,535. Given recent bearish sentiment and agents’ negative outlook, 
+I recommend selling a portion of SOL to reduce downside risk and secure profits. 
+Therefore, I'll Sell 0.2 SOL 
+
+# KRW-ETH:
+Hold the current position. The market sentiment is neutral, and the price is stable.
+
+# KRW-BTC:
+Buy 0.0001 BTC. The market sentiment is bullish, and the price is expected to rise.
 ";
 
-    private MarketAnalyzeResponse _marketAnalyze = new();
-    
     public LeaderAgent(
         AgentId id, 
         IAgentRuntime runtime, 
@@ -86,42 +97,30 @@ Step 2:
 
     public async ValueTask HandleAsync(InitMessage item, MessageContext messageContext)
     {
-        this._marketAnalyze = new MarketAnalyzeResponse();
         await this.PublishMessageAsync(new MarketAnalyzeRequest(), new TopicId(nameof(MarketAgent)));
     }
     
     public async ValueTask HandleAsync(MarketAnalyzeResponse item, MessageContext messageContext)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("Please make a decision based on the following opinions:");
+        sb.AppendLine("[OPINION]");
+        sb.AppendLine($"Agent Name : {messageContext.Sender}");
         foreach (var result in item.Results)
         {
-            sb.AppendLine($"[{result.Market}]");
-            sb.AppendLine($"{result.Analysis}");
-            sb.AppendLine($"(Sentiment: {result.Sentiment}, Confidence: {result.Confidence})");
+            sb.AppendLine($"{result.Market} Market: [{result.Sentiment}], Confidence: {result.Confidence}");
+            sb.AppendLine($"{result.Market} Market Reasoning: {result.Analysis}");
             sb.AppendLine();
         }
-
-        sb.AppendLine("[Portfolio]");
-        sb.AppendLine("Market | Amount | Avg Price");
-        var totalKrw = 0d;
-        foreach (var market in this.config.AvailableMarkets)
-        {
-            var request = new Chance.Request();
-            request.market = market;
-            var response = await this._upbitClient.GetChance(request);
-
-            sb.AppendLine($"{market} | {response.ask_account.balance} | {response.ask_account.avg_buy_price}");
-            totalKrw = Convert.ToDouble(response.bid_account.balance);
-        }
-
-        sb.AppendLine();
-        sb.AppendLine($"Available Balance : {totalKrw} KRW");
-        sb.AppendLine();
+        
+        sb.AppendLine("[Position]");
+        sb.AppendLine(await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets));
         
         var promptMessage = new TextMessage(Role.User, sb.ToString());
+        
+        this._logger.LogInformation("leader Prompt: {Prompt}", promptMessage.GetContent());
+        
         var chatHistory = new List<IMessage> { promptMessage };
-        const int maxStep = 5;
+        const int maxStep = 10;
         for (var i = 0; i < maxStep; i++)
         {
             var reasoning = await this._agent.GenerateReplyAsync(chatHistory);
