@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using TradingAgent.Agents;
 using TradingAgent.Agents.Agents;
 using TradingAgent.Agents.Messages;
+using TradingAgent.Agents.Services;
 using TradingAgent.Agents.Tools;
 using TradingAgent.Core.Config;
 
@@ -30,6 +31,7 @@ public class AgentRuntime(
         appBuilder.Services.AddSingleton<FunctionTools>();
         appBuilder.Services.AddSingleton<IUpbitClient>(upbitClient);
         appBuilder.Services.AddSingleton(_client);
+        appBuilder.Services.AddSingleton<IMessageSender, MessageSender>();
         appBuilder.Services.AddLogging(builder => builder.AddConsole());
 
         appBuilder.UseInProcessRuntime(deliverToSelf: true)

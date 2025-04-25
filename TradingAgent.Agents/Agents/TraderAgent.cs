@@ -2,11 +2,13 @@ using System.Text;
 using AutoGen.Core;
 using AutoGen.OpenAI;
 using AutoGen.OpenAI.Extension;
+using Discord.WebSocket;
 using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using OpenAI;
 using TradingAgent.Agents.Messages;
+using TradingAgent.Agents.Services;
 using TradingAgent.Agents.Tools;
 using TradingAgent.Agents.Utils;
 using TradingAgent.Core.Config;
@@ -23,6 +25,7 @@ public class TraderAgent : BaseAgent, IHandle<TradeRequest>
     private readonly AutoGen.Core.IAgent actor;
     private readonly Dictionary<string, Func<string, Task<string>>> traderFunctionMap;
     private readonly IUpbitClient _upbitClient;
+    private readonly IMessageSender _messageSender;
 
     private const string Prompt = @"
 You are a trader agent, you need to serve as a tool executor.
@@ -42,10 +45,12 @@ For example, if SOL costs 50,000 KRW and you want to buy 0.2 SOL, you should ent
         ILogger<BaseAgent> logger, 
         FunctionTools tools,
         AppConfig config, 
-        IUpbitClient upbitClient) : base(id, runtime, "trader", logger)
+        IUpbitClient upbitClient, 
+        IMessageSender messageSender) : base(id, runtime, "trader", logger)
     {
         this.config = config;
         this._upbitClient = upbitClient;
+        this._messageSender = messageSender;
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.LeaderAIModel);
         
         this.traderFunctionMap = new Dictionary<string, Func<string, Task<string>>>
@@ -70,21 +75,39 @@ For example, if SOL costs 50,000 KRW and you want to buy 0.2 SOL, you should ent
 
     public async ValueTask HandleAsync(TradeRequest item, MessageContext messageContext)
     {
-        var sb = new StringBuilder();
-        sb.AppendLine("Let's analyze the message from the leader and decide what to do.");
-        sb.AppendLine("[Position]");
-        sb.AppendLine(await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets));
-        sb.AppendLine();
-        sb.AppendLine("The message is:");
-        sb.AppendLine(item.Message);
-        var message = new TextMessage(Role.User, sb.ToString());
-        var response = await this.actor.GenerateReplyAsync(messages: [message]);
-        var result = response.GetContent();
-        if (result == null)
+        var prompt = @"""
+Let's analyze the message from the leader and decide what to do.
+
+# Current Position
+{current_position}
+
+# Message from the Leader Agent
+{message}
+""";
+
+        try
         {
-            throw new InvalidOperationException("Failed to get a response from the actor.");
+            var currentPosition =
+                await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets);
+            prompt = prompt
+                .Replace("{current_position}", currentPosition)
+                .Replace("{message}", item.Message);
+
+            var message = new TextMessage(Role.User, prompt);
+            var response = await this.actor.GenerateReplyAsync(messages: [message]);
+            var result = response.GetContent();
+            if (result == null)
+            {
+                throw new InvalidOperationException("Failed to get a response from the actor.");
+            }
+
+            this._logger.LogInformation(result);
         }
-        
-        this._logger.LogInformation(result);
+        catch (Exception e)
+        {
+            var discordMessage = $"Error occurred in TraderAgent: {e.Message}";
+            this._logger.LogError(e, discordMessage);
+            await this._messageSender.SendMessage(discordMessage);
+        }
     }
 }

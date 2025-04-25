@@ -102,20 +102,30 @@ Buy 0.0001 BTC. The market sentiment is bullish, and the price is expected to ri
     
     public async ValueTask HandleAsync(MarketAnalyzeResponse item, MessageContext messageContext)
     {
-        var sb = new StringBuilder();
-        sb.AppendLine("[OPINION]");
-        sb.AppendLine($"Agent Name : {messageContext.Sender}");
+        var prompt = @"""
+Hello Leader Agent, Should I buy, sell, or hold the following assets?
+
+# Market Insights
+{market_insight}
+
+# Current Position
+{current_position}
+""";
+        
+        var marketInsight = new StringBuilder();
         foreach (var result in item.Results)
         {
-            sb.AppendLine($"{result.Market} Market: [{result.Sentiment}], Confidence: {result.Confidence}");
-            sb.AppendLine($"{result.Market} Market Reasoning: {result.Analysis}");
-            sb.AppendLine();
+            marketInsight.AppendLine($"{result.Market} Market: [{result.Sentiment}], Confidence: {result.Confidence}");
+            marketInsight.AppendLine($"{result.Market} Market Reasoning: {result.Analysis}");
+            marketInsight.AppendLine();
         }
         
-        sb.AppendLine("[Position]");
-        sb.AppendLine(await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets));
+        var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets);
+        prompt = prompt
+            .Replace("{market_insight}", marketInsight.ToString())
+            .Replace("{current_position}", currentPosition);
         
-        var promptMessage = new TextMessage(Role.User, sb.ToString());
+        var promptMessage = new TextMessage(Role.User, prompt);
         
         this._logger.LogInformation("leader Prompt: {Prompt}", promptMessage.GetContent());
         

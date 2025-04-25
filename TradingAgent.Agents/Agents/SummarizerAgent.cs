@@ -8,6 +8,7 @@ using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using OpenAI;
 using TradingAgent.Agents.Messages;
+using TradingAgent.Agents.Services;
 using TradingAgent.Core.Config;
 using IAgent = AutoGen.Core.IAgent;
 
@@ -20,7 +21,7 @@ namespace TradingAgent.Agents.Agents;
 public class SummarizerAgent : BaseAgent, IHandle<SummaryRequest>
 {
     private readonly AppConfig config;
-    private readonly DiscordSocketClient _discordClient;
+    private readonly IMessageSender _messageSender;
     private readonly IAgent _agent;
 
     private const string Prompt = @"
@@ -29,14 +30,14 @@ Your task is to summarize the messages at most 10-15 lines.
 ";
     
     public SummarizerAgent(
-        DiscordSocketClient discordClient,
+        IMessageSender messageSender,
         AgentId id, 
         IAgentRuntime runtime, 
         ILogger<BaseAgent> logger, 
         AppConfig config) : base(id, runtime, "summarizer", logger)
     {
         this.config = config;
-        _discordClient = discordClient;
+        this._messageSender = messageSender;
         
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.WorkerAIModel);
         this._agent = new OpenAIChatAgent(client, "Summarizer", systemMessage: Prompt)
@@ -46,21 +47,21 @@ Your task is to summarize the messages at most 10-15 lines.
 
     public async ValueTask HandleAsync(SummaryRequest item, MessageContext messageContext)
     {
-        var sb = new StringBuilder();
-        sb.AppendLine("Please summarize the following messages:");
-        sb.AppendLine(item.Message);
-        var message = new TextMessage(Role.User, sb.ToString());
+        var prompt = $"""
+Please summarize the following messages:
+
+{item.Message}
+""";
+        
+        var message = new TextMessage(Role.User, prompt);
         var result = await this._agent.GenerateReplyAsync(messages: [message]);
         var summary = result.GetContent();
         
-        var channel = _discordClient.GetChannel(this.config.DiscordChannelId) as SocketTextChannel;
-        if (channel != null)
+        if (string.IsNullOrEmpty(summary))
         {
-            await channel.SendMessageAsync(summary);
+            throw new Exception("Summarizer agent failed to generate a summary.");
         }
-        else
-        {
-            this._logger.LogError("Failed to find the Discord channel.");
-        }
+        
+        await this._messageSender.SendMessage(summary);
     }
 }
