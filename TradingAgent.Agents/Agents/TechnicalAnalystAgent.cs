@@ -133,17 +133,17 @@ Return the trading signal in this JSON format:
             
             var quote = item.AnalysisType switch
             {
-                MarketAnalysisType.UseDayCandle => await this.GetDayCandleQuote(market),
-                MarketAnalysisType.Use4HourCandle => await this.GetMinuteCandleQuote(market, 240),
-                MarketAnalysisType.Use60MinCandle => await this.GetMinuteCandleQuote(market, 60),
+                MarketAnalysisType.DayCandle => await this.GetDayCandleQuote(market),
+                MarketAnalysisType.FourHourCandle => await this.GetMinuteCandleQuote(market, 240),
+                MarketAnalysisType.HourCandle => await this.GetMinuteCandleQuote(market, 60),
                 _ => throw new ArgumentOutOfRangeException()
             };
             
             var chartType = item.AnalysisType switch
             {
-                MarketAnalysisType.UseDayCandle => "day candle",
-                MarketAnalysisType.Use4HourCandle => "4 hour candles",
-                MarketAnalysisType.Use60MinCandle => "60 minute candles",
+                MarketAnalysisType.DayCandle => "day candle",
+                MarketAnalysisType.FourHourCandle => "4 hour candles",
+                MarketAnalysisType.HourCandle => "60 minute candles",
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -170,11 +170,10 @@ Return the trading signal in this JSON format:
                 throw new InvalidOperationException("Failed to deserialize the analysis result.");
             }
             
-            analysisResult.Market = market;
-            response.Results.Add(analysisResult);
+            response.Results.Add((analysisResult, market, item.AnalysisType));
         }
 
-        await this.PublishMessageAsync(response, new TopicId(nameof(LeaderAgent)));
+        await this.PublishMessageAsync(response, new TopicId(nameof(PortfolioManager)));
     }
 
     private string GetBollingerBand(List<Quote> quotes)

@@ -2,9 +2,9 @@ namespace TradingAgent.Agents.Messages;
 
 public enum MarketAnalysisType
 {
-    UseDayCandle,
-    Use4HourCandle,
-    Use60MinCandle,
+    DayCandle,
+    FourHourCandle,
+    HourCandle,
 }
 
 /// <summary>

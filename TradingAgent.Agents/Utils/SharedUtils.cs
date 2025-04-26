@@ -25,7 +25,6 @@ public static class SharedUtils
 
         sb.AppendLine();
         sb.AppendLine($"Available Balance : {totalKrw} KRW");
-        sb.AppendLine();
         return sb.ToString();
     }
 }

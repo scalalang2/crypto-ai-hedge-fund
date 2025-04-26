@@ -35,7 +35,7 @@ public class AgentRuntime(
         appBuilder.Services.AddLogging(builder => builder.AddConsole());
 
         appBuilder.UseInProcessRuntime(deliverToSelf: true)
-            .AddAgent<LeaderAgent>(nameof(LeaderAgent))
+            .AddAgent<PortfolioManager>(nameof(PortfolioManager))
             .AddAgent<TechnicalAnalystAgent>(nameof(TechnicalAnalystAgent))
             .AddAgent<CriticAgent>(nameof(CriticAgent))
             .AddAgent<TraderAgent>(nameof(TraderAgent))
@@ -57,7 +57,7 @@ public class AgentRuntime(
         var message = new InitMessage { };
         do
         {
-            await agentApp.PublishMessageAsync(message, new TopicId(nameof(LeaderAgent)), cancellationToken: cancellationToken).ConfigureAwait(false);
+            await agentApp.PublishMessageAsync(message, new TopicId(nameof(PortfolioManager)), cancellationToken: cancellationToken).ConfigureAwait(false);
         } while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false));
         
         await agentApp.WaitForShutdownAsync().ConfigureAwait(false);

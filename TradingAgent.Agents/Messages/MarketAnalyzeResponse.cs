@@ -7,15 +7,12 @@ namespace TradingAgent.Agents.Messages;
 /// </summary>
 public class MarketAnalyzeResponse
 {
-    public List<MarketAnalysisResult> Results { get; set; } = [];
+    public List<(MarketAnalysisResult AnalystResult, string Market, MarketAnalysisType AnalysisType)> Results { get; set; } = [];
 }
 
 [Title("marketanalysisresult")]
 public class MarketAnalysisResult
 {
-    [Description("Market Name")]
-    public string Market { get; set; } = string.Empty;
-    
     [Description("Analysis is a short description of your analysis, including any relevant indicators or patterns you observed.")]
     public string Reasoning { get; set; } = string.Empty;
     
