@@ -55,6 +55,11 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
                 await Task.Delay(1000); // rest to avoid rate limit
                 await this.PlaceOrder(decision);
             }
+
+            await Task.Delay(1000);
+            
+            var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets);
+            await this._messageSender.SendMessage($"**Current Position** \n\n {currentPosition}");
         } catch (Exception ex)
         {
             await this._messageSender.SendMessage($"**Trading Error** \n\n {ex.Message}");
