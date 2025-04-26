@@ -1,10 +1,25 @@
 using System.Text;
+using Skender.Stock.Indicators;
 using TradingAgent.Agents.Tools;
 
 namespace TradingAgent.Agents.Extensions;
 
 public static class HumanReadableExtensions
 {
+    public static string ToReadableString(this List<Quote> candles)
+    {
+        var sb = new StringBuilder();
+        
+        sb.AppendLine("Date | Open Price | Close Price | High Price | Low Price | Volume");
+        
+        foreach (var candle in candles)
+        {
+            sb.AppendLine($"{candle.Date} | {candle.Open} | {candle.Close} | {candle.High} | {candle.Low} | {candle.Volume}");
+        }
+        
+        return sb.ToString();
+    }
+    
     public static string ToReadableString(this List<Candles.Response> candles)
     {
         var sb = new StringBuilder();

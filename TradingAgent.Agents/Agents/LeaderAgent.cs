@@ -43,7 +43,7 @@ You should consider the opinions of other agents, but ultimately make the final 
 ## Input Format
 [OPINION]
 - Agent Name: [Name]
-- KRW-BTC Market: [High Bullish/Bullish/High Bearish/Bearish/Neutral], Confidence: [0.0-1.0]
+- KRW-BTC Market: [Bullish/Bearish/Neutral], Confidence: [0.0-100.0]
 - KRW-BTC Market Reasning: [Reasoning]
 
 ## Use the following format:
@@ -97,7 +97,7 @@ Buy 0.0001 BTC. The market sentiment is bullish, and the price is expected to ri
 
     public async ValueTask HandleAsync(InitMessage item, MessageContext messageContext)
     {
-        await this.PublishMessageAsync(new MarketAnalyzeRequest(), new TopicId(nameof(MarketAgent)));
+        await this.PublishMessageAsync(new MarketAnalyzeRequest(), new TopicId(nameof(TechnicalAnalystAgent)));
     }
     
     public async ValueTask HandleAsync(MarketAnalyzeResponse item, MessageContext messageContext)
@@ -115,8 +115,8 @@ Hello Leader Agent, Should I buy, sell, or hold the following assets?
         var marketInsight = new StringBuilder();
         foreach (var result in item.Results)
         {
-            marketInsight.AppendLine($"{result.Market} Market: [{result.Sentiment}], Confidence: {result.Confidence}");
-            marketInsight.AppendLine($"{result.Market} Market Reasoning: {result.Analysis}");
+            marketInsight.AppendLine($"{result.Market} Market: [{result.Signal}], Confidence: {result.Confidence}");
+            marketInsight.AppendLine($"{result.Market} Market Reasoning: {result.Reasoning}");
             marketInsight.AppendLine();
         }
         
