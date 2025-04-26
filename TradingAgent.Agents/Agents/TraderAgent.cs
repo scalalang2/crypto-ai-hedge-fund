@@ -47,7 +47,7 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
         {
             foreach (var decision in item.FinalDecisions)
             {
-                if (decision.Action == "Hold")
+                if (decision.Action == "Hold" || decision.Quantity == 0)
                 {
                     continue;
                 }
