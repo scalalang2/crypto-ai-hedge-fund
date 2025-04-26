@@ -55,14 +55,14 @@ Use evidence, logic, and clear analysis to answer each question. Repeat this pro
 [THOUGHT]
 
 Step 1:
-Question: [Formulate a critical question about the asset, the market, or the data]
+Question: [Formulate a critical question about the all assets, all markets, or the data]
 Thought: [Analyze using data, agent opinions, and your expertise; provide clear, logical reasoning]
 
 Step 2:
 Question: [Drill deeper based on the previous answer or introduce a new perspective]
 Thought: [Further analysis, incorporating new data or considerations]
 
-... (Continue this process for at least 5 steps per asset, or more if needed)
+... (This process can repeat multiple times)
 
 After completing your reasoning, provide a clear, actionable decision (Buy/Sell/Hold) for each asset, supported by your analysis.
 Say [TERMINATE] if you wish to end the conversation.
@@ -71,12 +71,12 @@ Say [TERMINATE] if you wish to end the conversation.
 [THOUGHT]
 
 Step 1:
-- Question: Should I perceive the current market trend as bullish or bearish?
-- Thought: The market trend is currently high bearish.
+- Question: How does the current bearish sentiment in KRW-SOL affect the decision to hold or sell?
+- Thought: KRW-SOL shows signs of continued bearish sentiment with price closing below lower Bollinger Band and RSI not yet oversold at 42.51. The MACD indicates bearish continuation, suggesting it's prudent to consider selling to minimize losses.
 
 Step 2:
-- Question: Should I buy or sell SOL?
-- Thought: Current market sentiment is bearish, and the price is expected to fall. Therefore, I'll Sell 0.1 SOL.
+- Question: Is the current KRW-BTC market condition indicative of a continued decline, and how does this affect my decision to hold or sell?
+- Thought: The current KRW-BTC market is bearish with substantial confidence (85). The closing price is significantly lower, and indicators such as MACD and RSI show weakening momentum and neutral, but not oversold. The fact that BTC is below the lower Bollinger Band while OBV shows resistance to this decline suggests a sell-off with minimal buyer interest.
 
 ... (This process can repeat multiple times if needed and repeat this steps at least 5 times)
 
