@@ -119,7 +119,7 @@ Rules:
     {
         await this.PublishMessageAsync(new MarketAnalyzeRequest
         {
-            AnalysisType = MarketAnalysisType.FourHourCandle,
+            AnalysisType = MarketAnalysisType.HourCandle
         }, new TopicId(nameof(TechnicalAnalystAgent)));
     }
     
@@ -137,6 +137,10 @@ Let's start financial decision-making process.
         
         var decisionPrompt = """
 Based on the chat history, make your trading decisions for each ticker.
+
+Rules:
+1. Recommend a 'Sell' if the asset has achieved at least a 5% profit from its average purchase price, or if a significant negative trend suggests a stop-loss is necessary (e.g., more than 5% loss). Otherwise, prefer 'Hold'. Only recommend a 'Buy' if there is a strong signal of a potential 5% upside from the current price.
+2. Do not allocate more than 50% of the total portfolio to any single asset to manage risk.
 
 # Current Portfolio
 {current_portfolio}
