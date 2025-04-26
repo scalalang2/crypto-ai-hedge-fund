@@ -50,6 +50,9 @@ Your task is to summarize the messages at most 10-15 lines.
         var prompt = $"""
 Please summarize the following messages:
 
+Please notice that:
+1. When the portfolio manager decided to buy, then the unit of quantity is KRW otherwise the unit of quantity is asset.
+
 {item.Message}
 """;
         
