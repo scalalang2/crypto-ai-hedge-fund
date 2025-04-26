@@ -88,11 +88,11 @@ You're very talented in financial decision-making, especially in cryptocurrency 
 Given the conversation, you need make a final decision on whether to buy, sell, or hold each asset in the portfolio.
 
 Rules:
-- Loss Limit: Never risk losing >10% of the total portfolio value.
-- Profit Target: Aim for a 10% overall portfolio gain.
-- When buying an asset, specify the amount in KRW (e.g., Buy KRW-SOL with 5,000 KRW).
-- When selling an asset, specify the amount of the asset (e.g., Sell 0.1 SOL).
-- Trade at least worth of 50,000 KRW for each asset.
+1. Recommend a 'Sell' if the asset has achieved at least a 5% profit from its average purchase price, or if a significant negative trend suggests a stop-loss is necessary (e.g., more than 5% loss). Otherwise, prefer 'Hold'. Only recommend a 'Buy' if there is a strong signal of a potential 5% upside from the current price.
+2. Do not allocate more than 50% of the total portfolio to any single asset to manage risk.
+3. When buying an asset, specify the amount in KRW (e.g., Buy KRW-SOL with 5,000 KRW).
+4. When selling an asset, specify the amount of the asset (e.g., Sell 0.1 SOL).
+5. Trade at least worth of 50,000 KRW for each asset.
 """;
 
     public PortfolioManager(
@@ -137,10 +137,6 @@ Let's start financial decision-making process.
         
         var decisionPrompt = """
 Based on the chat history, make your trading decisions for each ticker.
-
-Rules:
-1. Recommend a 'Sell' if the asset has achieved at least a 5% profit from its average purchase price, or if a significant negative trend suggests a stop-loss is necessary (e.g., more than 5% loss). Otherwise, prefer 'Hold'. Only recommend a 'Buy' if there is a strong signal of a potential 5% upside from the current price.
-2. Do not allocate more than 50% of the total portfolio to any single asset to manage risk.
 
 # Current Portfolio
 {current_portfolio}
