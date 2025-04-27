@@ -1,13 +1,6 @@
-using System.Diagnostics;
-using System.Text;
-using AutoGen.Core;
-using AutoGen.OpenAI;
-using AutoGen.OpenAI.Extension;
-using Discord.WebSocket;
 using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
-using OpenAI;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Services;
 using TradingAgent.Agents.Tools;
@@ -26,6 +19,7 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
     private readonly Dictionary<string, Func<string, Task<string>>> traderFunctionMap;
     private readonly IUpbitClient _upbitClient;
     private readonly IMessageSender _messageSender;
+    private readonly ITradingHistoryService _tradingHistoryService;
 
     public TraderAgent(
         AgentId id, 
@@ -34,11 +28,13 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
         FunctionTools tools,
         AppConfig config, 
         IUpbitClient upbitClient, 
-        IMessageSender messageSender) : base(id, runtime, "trader", logger)
+        IMessageSender messageSender, 
+        ITradingHistoryService tradingHistoryService) : base(id, runtime, "trader", logger)
     {
         this.config = config;
         this._upbitClient = upbitClient;
         this._messageSender = messageSender;
+        _tradingHistoryService = tradingHistoryService;
     }
 
     public async ValueTask HandleAsync(FinalDecisionMessage item, MessageContext messageContext)
@@ -55,19 +51,22 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
                 await Task.Delay(1000); // rest to avoid rate limit
                 await this.PlaceOrder(decision);
             }
-
-            await Task.Delay(1000);
-            
-            var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets);
-            await this._messageSender.SendMessage($"**Current Position** \n\n {currentPosition}");
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             await this._messageSender.SendMessage($"**Trading Error** \n\n {ex.Message}");
             this._logger.LogError(ex, "Error handling FinalDecisionMessage {@Request}", item.FinalDecisions);
         }
+        finally
+        {
+            var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets);
+            var tradingHistory = await SharedUtils.GetTradingHistoryPrompt(this._tradingHistoryService);
+            await this._messageSender.SendMessage($"**Current Position**\n{currentPosition}\n");
+            await this._messageSender.SendMessage($"**Trading History**\n{tradingHistory}\n");
+        }
     }
 
-    public async Task<PlaceOrder.Response> PlaceOrder(FinalDecision decision)
+    public async Task PlaceOrder(FinalDecision decision)
     {
         const string buy = "Buy";
         const string sell = "Sell";
@@ -76,6 +75,20 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
         {
             throw new ArgumentException($"Invalid action. Only 'buy' and 'sell' are allowed. but {decision.Action} was given");
         }
+        
+        var ticker = await this._upbitClient.GetTicker(decision.Ticker);
+        if (ticker.Count == 0)
+        {
+            throw new Exception($"Ticker {decision.Ticker} not found");
+        }
+            
+        // 거래 금액이 2만원 미만이면 그냥 무시
+        var price = Convert.ToDouble(ticker[0].trade_price);
+        if(price * decision.Quantity < 20000)
+        {
+            return;
+        }
+        await Task.Delay(500);
         
         var quantity = string.Format("{0:F8}", decision.Quantity);
         var ordType = decision.Action == buy ? "price" : "market";
@@ -97,7 +110,27 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
             request.volume = quantity;
         }
         
-        var response = await this._upbitClient.PlaceOrder(request);
-        return response;
+        // 주문 시작
+        await this._upbitClient.PlaceOrder(request);
+
+        // 판매인 경우 매매 기록을 추가한다.
+        if (decision.Action == sell)
+        {
+            var chanceRequest = new Chance.Request
+            {
+                market = decision.Ticker
+            };
+            var chance = await this._upbitClient.GetChance(chanceRequest);
+            
+            var tradeHistoryRecord = new TradeHistoryRecord
+            {
+                Date = DateTime.UtcNow,
+                Ticker = decision.Ticker,
+                BuyingPrice = Convert.ToDouble(chance.ask_account.avg_buy_price),
+                SellingPrice = price,
+                Amount = decision.Quantity
+            };
+            await this._tradingHistoryService.AddTradeHistoryAsync(tradeHistoryRecord);
+        }
     }
 }

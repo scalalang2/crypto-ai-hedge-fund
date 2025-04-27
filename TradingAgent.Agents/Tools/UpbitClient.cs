@@ -88,12 +88,10 @@ public class UpbitClient : IUpbitClient
 
     private async Task<RestResponse> NonAuthApiCall(string endPoint, Dictionary<string, string> args = null)
     {
-        if (args is null)
-            args = new Dictionary<string, string>();
-        
         Uri url = new(_baseUrl, endPoint);
         var urlString = url.ToString().TrimEnd('/');
-        urlString += $"/?{ToQueryString(args)}";   
+        if(args != null)
+            urlString += $"/?{ToQueryString(args)}";   
         RestClient client = new(new Uri(urlString));
         RestRequest request = new()
         {
@@ -101,7 +99,6 @@ public class UpbitClient : IUpbitClient
         };
         
         request.AddHeader("Content-Type", "application/json");
-        request.AddHeader("Accept", "application/json");
         return await client.ExecuteAsync(request);
     } 
     

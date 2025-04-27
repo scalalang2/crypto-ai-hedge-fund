@@ -32,6 +32,7 @@ public class AgentRuntime(
         appBuilder.Services.AddSingleton<IUpbitClient>(upbitClient);
         appBuilder.Services.AddSingleton(_client);
         appBuilder.Services.AddSingleton<IMessageSender, MessageSender>();
+        appBuilder.Services.AddSingleton<ITradingHistoryService, TradingHistoryService>();
         appBuilder.Services.AddLogging(builder => builder.AddConsole());
 
         appBuilder.UseInProcessRuntime(deliverToSelf: true)
@@ -65,7 +66,6 @@ public class AgentRuntime(
 
     private Task MessageReceivedAsync(SocketMessage arg)
     {
-        logger.LogInformation("Message received in Discord: {Message}", arg.Content);
         return Task.CompletedTask;
     }
 

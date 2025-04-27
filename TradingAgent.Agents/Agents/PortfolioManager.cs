@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using OpenAI;
 using OpenAI.Responses;
 using TradingAgent.Agents.Messages;
+using TradingAgent.Agents.Services;
 using TradingAgent.Agents.Tools;
 using TradingAgent.Agents.Utils;
 using TradingAgent.Core.Config;
@@ -28,9 +29,10 @@ public class PortfolioManager : BaseAgent,
 {
     private readonly AppConfig config;
     private readonly IUpbitClient _upbitClient;
+    private readonly ITradingHistoryService _tradingHistoryService;
     private readonly AutoGen.Core.IAgent _agent;
     private readonly AutoGen.Core.IAgent _decider;
-    
+
     private const string Prompt = @"
 You are Portfolio Manager Agent, an expert in financial decision-making with a specialization in cryptocurrency markets. 
 Your core responsibility is to conduct in-depth, data-driven analysis of a given crypto portfolio, integrating both quantitative market data and qualitative opinions from other agents to determine optimal buy, sell, or hold actions for each asset.
@@ -90,9 +92,8 @@ Given the conversation, you need make a final decision on whether to buy, sell, 
 Rules:
 1. Recommend a 'Sell' if the asset has achieved at least a 5% profit from its average purchase price, or if a significant negative trend suggests a stop-loss is necessary (e.g., more than 5% loss). Otherwise, prefer 'Hold'. Only recommend a 'Buy' if there is a strong signal of a potential 5% upside from the current price.
 2. Do not allocate more than 50% of the total portfolio to any single asset to manage risk.
-3. When buying an asset, specify the amount in KRW (e.g., Buy KRW-SOL with 5,000 KRW).
-4. When selling an asset, specify the amount of the asset (e.g., Sell 0.1 SOL).
-5. Trade at least worth of 50,000 KRW for each asset.
+3. When buying an asset, you MUST specify the amount in KRW (e.g., Buy KRW-SOL with 5,000 KRW).
+4. When selling an asset, you MUST specify the amount of the asset (e.g., Sell 0.1 SOL).
 """;
 
     public PortfolioManager(
@@ -100,10 +101,11 @@ Rules:
         IAgentRuntime runtime, 
         ILogger<BaseAgent> logger, 
         AppConfig config, 
-        IUpbitClient upbitClient) : base(id, runtime, "leader", logger)
+        IUpbitClient upbitClient, ITradingHistoryService tradingHistoryService) : base(id, runtime, "leader", logger)
     {
         this.config = config;
         this._upbitClient = upbitClient;
+        _tradingHistoryService = tradingHistoryService;
 
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.LeaderAIModel);
         this._agent = new OpenAIChatAgent(client, "Leader", systemMessage: Prompt)
@@ -141,6 +143,9 @@ Based on the chat history, make your trading decisions for each ticker.
 # Current Portfolio
 {current_portfolio}
 
+# TradingHistory
+{trading_history}
+
 Output strictly in the following format:
 {
     "FinalDecisions": [
@@ -148,6 +153,7 @@ Output strictly in the following format:
             "Ticker": "KRW-BTC",
             "Action": "Buy/Sell/Hold",
             "Quantity": double for amount of asset,
+            "Price": current price of asset,
             "Confidence": double between 0 and 100,
             "Reasoning": "string"
         }
@@ -188,10 +194,12 @@ Output strictly in the following format:
             chatHistory.Add(reasoning);
         }
 
+        var tradingHistory = await SharedUtils.GetTradingHistoryPrompt(this._tradingHistoryService);
         var schemaBuilder = new JsonSchemaBuilder().FromType<FinalDecisionMessage>();
         var schema = schemaBuilder.Build();
         decisionPrompt = decisionPrompt
-            .Replace("{current_portfolio}", currentPosition);
+            .Replace("{current_portfolio}", currentPosition)
+            .Replace("{trading_history}", tradingHistory);
         
         this._logger.LogInformation("Let's make final Decision: {Decision}", decisionPrompt);
         

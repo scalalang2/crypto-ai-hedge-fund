@@ -23,11 +23,6 @@ public class SummarizerAgent : BaseAgent, IHandle<SummaryRequest>
     private readonly AppConfig config;
     private readonly IMessageSender _messageSender;
     private readonly IAgent _agent;
-
-    private const string Prompt = @"
-You are a summarizer agent.
-Your task is to summarize the messages at most 10-15 lines.
-";
     
     public SummarizerAgent(
         IMessageSender messageSender,
@@ -40,7 +35,7 @@ Your task is to summarize the messages at most 10-15 lines.
         this._messageSender = messageSender;
         
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.WorkerAIModel);
-        this._agent = new OpenAIChatAgent(client, "Summarizer", systemMessage: Prompt)
+        this._agent = new OpenAIChatAgent(client, "Summarizer")
             .RegisterMessageConnector()
             .RegisterPrintMessage();
     }
@@ -48,11 +43,18 @@ Your task is to summarize the messages at most 10-15 lines.
     public async ValueTask HandleAsync(SummaryRequest item, MessageContext messageContext)
     {
         var prompt = $"""
-Please summarize the following messages:
+Please summarize the following text in a clear manner.
 
-Please notice that:
-1. When the portfolio manager decided to buy, then the unit of quantity is KRW otherwise the unit of quantity is asset.
+Rules:
+You need to speak in Korean.
 
+Please use the following format:
+**최종 의사 결정**
+- KRW-BTC: 최종 결정 **매수**, 수량: **800000**, 신뢰도: 85.6, 이유: KRW-BTC 시장은 강한 상승 모멘텀을 보이며 매수량이 증가하고 있으며, MACD와 같은 기술 지표가 긍정적이고 RSI가 과매도 상태가 아니므로 성장 가능성이 있습니다. 지금 매수하면 이 상승 추세를 활용할 수 있습니다. 리스크 관리와 포트폴리오 균형 유지를 위해 800,000 KRW로 매수에 한정합니다
+- KRW-SOL: ...
+- KRW-DOGE: ...
+
+The message is 
 {item.Message}
 """;
         
