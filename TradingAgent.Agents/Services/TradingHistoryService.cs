@@ -45,7 +45,7 @@ public class TradingHistoryService : ITradingHistoryService
     {
         var totalProfit = _tradeHistoryRecords
             .Where(x => x.ProfitRate > 0)
-            .Sum(x => x.SellingPrice - x.BuyingPrice);
+            .Sum(x => (x.SellingPrice - x.BuyingPrice) * x.Amount);
         return Task.FromResult(totalProfit);
     }
 
@@ -53,7 +53,7 @@ public class TradingHistoryService : ITradingHistoryService
     {
         var totalLoss = _tradeHistoryRecords
             .Where(x => x.LossRate > 0)
-            .Sum(x => x.SellingPrice - x.BuyingPrice);
+            .Sum(x => (x.SellingPrice - x.BuyingPrice) * x.Amount);
         return Task.FromResult(totalLoss);
     }
 }

@@ -36,14 +36,14 @@ public static class SharedUtils
         var tradeHistory = await tradingHistoryService.GetTradeHistoryAsync(10);
         foreach (var record in tradeHistory)
         {
-            sb.AppendLine($"{record.Date} | {record.Ticker} | {record.BuyingPrice} | {record.SellingPrice} | {record.ProfitRate} | {record.LossRate}");
+            sb.AppendLine($"{record.Date} | {record.Ticker} | {record.BuyingPrice:N2} | {record.SellingPrice:N2} | {record.ProfitRate:N3} | {record.LossRate:N3}");
         }
         
         sb.AppendLine();
-        sb.AppendLine($"Total Profit Rate : {await tradingHistoryService.GetTotalProfitRateAsync()}");
-        sb.AppendLine($"Total Loss Rate : {await tradingHistoryService.GetTotalLossRateAsync()}");
-        sb.AppendLine($"Total Profit : {await tradingHistoryService.GetTotalProfitAsync()}");
-        sb.AppendLine($"Total Loss : {await tradingHistoryService.GetTotalLossAsync()}");
+        sb.AppendLine($"Total Profit Rate : {await tradingHistoryService.GetTotalProfitRateAsync():N3}");
+        sb.AppendLine($"Total Loss Rate : {await tradingHistoryService.GetTotalLossRateAsync():N3}");
+        sb.AppendLine($"Total Profit : {await tradingHistoryService.GetTotalProfitAsync():N3}");
+        sb.AppendLine($"Total Loss : {await tradingHistoryService.GetTotalLossAsync():N3}");
 
         return sb.ToString();
     }
