@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using AutoGen.Core;
@@ -10,6 +11,8 @@ using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using OpenAI;
 using OpenAI.Responses;
+using Skender.Stock.Indicators;
+using TradingAgent.Agents.Extensions;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Services;
 using TradingAgent.Agents.Tools;
@@ -32,6 +35,10 @@ public class PortfolioManager : BaseAgent,
     private readonly ITradingHistoryService _tradingHistoryService;
     private readonly AutoGen.Core.IAgent _agent;
     private readonly AutoGen.Core.IAgent _decider;
+ 
+    // 버퍼에 3명의 에이전트의 의견이 모여야 최종 결정을 내리게 된다.
+    private const int NumberOfAgents = 2;
+    private readonly ConcurrentDictionary<string, MarketAnalyzeResponse> _buffers = new();
 
     private const string Prompt = @"
 You are Portfolio Manager Agent, an expert in financial decision-making with a specialization in cryptocurrency markets. 
@@ -95,6 +102,45 @@ Rules:
 3. When buying an asset, you MUST specify the amount in KRW (e.g., Buy KRW-SOL with 5,000 KRW).
 4. When selling an asset, you MUST specify the amount of the asset (e.g., Sell 0.1 SOL).
 """;
+    
+    private string prompt = """
+Let's start financial decision-making process.
+
+# Market Insights
+{market_insight}
+
+# Current Position
+{current_position}
+""";
+        
+    private string decisionPrompt = """
+Based on the chat history, make your trading decisions for each ticker.
+
+# Current Portfolio
+{current_portfolio}
+
+# TradingHistory
+{trading_history}
+
+Output strictly in the following format:
+{
+ "FinalDecisions": [
+     {
+         "Ticker": "KRW-BTC",
+         "Action": "Buy/Sell/Hold",
+         "Quantity": double for amount of asset,
+         "Price": current price of asset,
+         "Confidence": double between 0 and 100,
+         "Reasoning": "string"
+     }
+     {
+         "Ticker": "KRW-SOL",
+         ...
+     }
+     ...
+ ]
+}
+""";
 
     public PortfolioManager(
         AgentId id, 
@@ -119,58 +165,50 @@ Rules:
 
     public async ValueTask HandleAsync(InitMessage item, MessageContext messageContext)
     {
-        await this.PublishMessageAsync(new MarketAnalyzeRequest
+        this._buffers.Clear();
+
+        var request = new MarketAnalyzeRequest();
+        foreach (var market in this.config.AvailableMarkets)
         {
-            AnalysisType = MarketAnalysisType.HourCandle
-        }, new TopicId(nameof(TechnicalAnalystAgent)));
+            var marketData = new MarketData
+            {
+                QuoteType = QuoteType.HourCandle,
+                Ticker = market,
+                Quotes = await this.GetMinuteCandleQuote(market, 60)
+            };
+
+            request.MarketDataList.Add(marketData);
+        }
+
+        await this.PublishMessageAsync(request, new TopicId(nameof(TechnicalAnalystAgent)));
+        await this.PublishMessageAsync(request, new TopicId(nameof(GeorgeLaneAgent)));
+        // await this.PublishMessageAsync(new SentimentAnalyzeRequest(), new TopicId(nameof(SentimentAgent)));
     }
     
     public async ValueTask HandleAsync(MarketAnalyzeResponse item, MessageContext messageContext)
     {
-        var prompt = """
-Let's start financial decision-making process.
-
-# Market Insights
-{market_insight}
-
-# Current Position
-{current_position}
-""";
-        
-        var decisionPrompt = """
-Based on the chat history, make your trading decisions for each ticker.
-
-# Current Portfolio
-{current_portfolio}
-
-# TradingHistory
-{trading_history}
-
-Output strictly in the following format:
-{
-    "FinalDecisions": [
+        if (this._buffers.TryAdd(messageContext.Sender.ToString()!, item) == false)
         {
-            "Ticker": "KRW-BTC",
-            "Action": "Buy/Sell/Hold",
-            "Quantity": double for amount of asset,
-            "Price": current price of asset,
-            "Confidence": double between 0 and 100,
-            "Reasoning": "string"
+            throw new Exception($"Duplicated message from sender: {messageContext.Sender.ToString()}");
         }
-        {
-            "Ticker": "KRW-SOL",
-            ...
-        }
-        ...
-    ]
-}
-""";
         
+        if (this._buffers.Count < NumberOfAgents)
+            return;
+
         var marketInsight = new StringBuilder();
-        foreach (var result in item.Results)
+        foreach (var (agentName, response) in this._buffers)
         {
-            marketInsight.AppendLine($"{result.Market} Market: [{result.AnalystResult.Signal}], Confidence: {result.AnalystResult.Confidence}, Data Type: {result.AnalysisType.ToString()}");
-            marketInsight.AppendLine($"{result.Market} Market Reasoning: {result.AnalystResult.Reasoning}");
+            marketInsight.AppendLine($"Message from {agentName}");
+            foreach (var market in response.MarketAnalysis)
+            {
+                marketInsight.AppendLine($"Ticker: {market.Market} [{market.AnalystResult.Signal}], [Confidence: {market.AnalystResult.Confidence}], [Reasoning: {market.AnalystResult.Reasoning}]");
+            }
+
+            if (!string.IsNullOrEmpty(response.OverallAnalysis.Reasoning))
+            {
+                marketInsight.AppendLine();
+                marketInsight.AppendLine($"Overall Analysis: {response.OverallAnalysis.Signal}, [Confidence: {response.OverallAnalysis.Confidence}], [Reasoning: {response.OverallAnalysis.Reasoning}]");
+            }
             marketInsight.AppendLine();
         }
         
@@ -226,5 +264,27 @@ Output strictly in the following format:
         
         await this.PublishMessageAsync(finalDecisionMessage, new TopicId(nameof(TraderAgent)));
         await this.PublishMessageAsync(summaryRequest, new TopicId(nameof(SummarizerAgent)));
+    }
+    
+    private async Task<List<Quote>> GetMinuteCandleQuote(string market, int unit)
+    {
+        var candleResponse = await this._upbitClient.GetMinuteCandles(unit, new Candles.Request
+        {
+            market = market,
+            count = "100"
+        });
+            
+        return candleResponse.ToQuote();
+    }
+    
+    private async Task<List<Quote>> GetDayCandleQuote(string market)
+    {
+        var candleResponse = await this._upbitClient.GetDayCandles(new DayCandles.Request
+        {
+            market = market,
+            count = "100"
+        });
+            
+        return candleResponse.ToQuote();
     }
 }

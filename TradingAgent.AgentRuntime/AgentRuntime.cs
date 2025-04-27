@@ -38,6 +38,7 @@ public class AgentRuntime(
         appBuilder.UseInProcessRuntime(deliverToSelf: true)
             .AddAgent<PortfolioManager>(nameof(PortfolioManager))
             .AddAgent<TechnicalAnalystAgent>(nameof(TechnicalAnalystAgent))
+            .AddAgent<GeorgeLaneAgent>(nameof(GeorgeLaneAgent))
             .AddAgent<CriticAgent>(nameof(CriticAgent))
             .AddAgent<TraderAgent>(nameof(TraderAgent))
             .AddAgent<RiskManagerAgent>(nameof(RiskManagerAgent))

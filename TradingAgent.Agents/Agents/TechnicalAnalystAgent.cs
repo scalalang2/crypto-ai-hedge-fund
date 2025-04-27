@@ -28,7 +28,6 @@ public class TechnicalAnalystAgent :
 {
     private readonly AppConfig _config;
     private readonly AutoGen.Core.IAgent _agent;
-    private IUpbitClient _upbitClient;
 
     private const string Prompt = """
 You are an advanced analyst specializing in technical analysis of cryptocurrency and stock markets. 
@@ -68,6 +67,7 @@ OBV Analysis:
 
 Rules:
 - Proivde a data-driven recommentation
+- Details the exact value readings and their recent movements
 
 ## Example
 {
@@ -84,13 +84,12 @@ Rules:
         ILogger<BaseAgent> logger, 
         AppConfig config) : base(id, runtime, "market agent", logger)
     {
-        this._upbitClient = upbitClient;
         this._config = config;
         
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.WorkerAIModel);
         this._agent = new OpenAIChatAgent(
                 chatClient: client, 
-                name: "MarketAgent", 
+                name: "Techincal Analyst Agent", 
                 systemMessage: Prompt)
             .RegisterMessageConnector()
             .RegisterPrintMessage();
@@ -102,10 +101,10 @@ Rules:
         var schemaBuilder = new JsonSchemaBuilder().FromType<MarketAnalysisResult>();
         var schema = schemaBuilder.Build();
         
-        foreach (var market in this._config.AvailableMarkets)
+        foreach (var marketData in item.MarketDataList)
         {
             var prompt = """
-Based on the following {chart_type} candlestick for the market {market}, 
+Based on the following {chart_type} candlestick for the ticker {ticker}, 
 create a investment signal.
 
 # Candle Data
@@ -130,31 +129,15 @@ Return the trading signal in this JSON format:
     "Reasoning": "string"
 }
 """;
-            
-            var quote = item.AnalysisType switch
-            {
-                MarketAnalysisType.DayCandle => await this.GetDayCandleQuote(market),
-                MarketAnalysisType.FourHourCandle => await this.GetMinuteCandleQuote(market, 240),
-                MarketAnalysisType.HourCandle => await this.GetMinuteCandleQuote(market, 60),
-                _ => throw new ArgumentOutOfRangeException()
-            };
-            
-            var chartType = item.AnalysisType switch
-            {
-                MarketAnalysisType.DayCandle => "day candle",
-                MarketAnalysisType.FourHourCandle => "4 hour candles",
-                MarketAnalysisType.HourCandle => "60 minute candles",
-                _ => throw new ArgumentOutOfRangeException()
-            };
 
             prompt = prompt
-                .Replace("{market}", market)
-                .Replace("{chart_type}", chartType)
-                .Replace("{candle_data}", quote.ToReadableString())
-                .Replace("{bollinger_band}", this.GetBollingerBand(quote))
-                .Replace("{rsi}", this.GetRsi(quote))
-                .Replace("{macd}", this.GetMacd(quote))
-                .Replace("{obv}", this.GetObv(quote));
+                .Replace("{ticker}", marketData.Ticker)
+                .Replace("{chart_type}", marketData.QuoteType.ToString())
+                .Replace("{candle_data}", marketData.Quotes.ToReadableString())
+                .Replace("{bollinger_band}", this.GetBollingerBand(marketData.Quotes))
+                .Replace("{rsi}", this.GetRsi(marketData.Quotes))
+                .Replace("{macd}", this.GetMacd(marketData.Quotes))
+                .Replace("{obv}", this.GetObv(marketData.Quotes));
 
             var message = new TextMessage(Role.User, prompt);
             var reply = await this._agent.GenerateReplyAsync(
@@ -170,9 +153,10 @@ Return the trading signal in this JSON format:
                 throw new InvalidOperationException("Failed to deserialize the analysis result.");
             }
             
-            response.Results.Add((analysisResult, market, item.AnalysisType));
+            response.MarketAnalysis.Add((analysisResult, marketData.Ticker));
         }
 
+        await this.PublishMessageAsync(response, new TopicId(nameof(SummarizerAgent)));
         await this.PublishMessageAsync(response, new TopicId(nameof(PortfolioManager)));
     }
 
@@ -183,7 +167,7 @@ Return the trading signal in this JSON format:
         sb.AppendLine("Date | SMA | UpperBand | LowerBand | PercentB | Z-Score | BandWidth");
         foreach (var quote in band)
         {
-            sb.AppendLine($"{quote.Date} | {quote.Sma} | {quote.UpperBand} | {quote.LowerBand} | {quote.PercentB} | {quote.ZScore} | {quote.Width}");
+            sb.AppendLine($"{quote.Date:yyyy-MM-dd HH:mm:ss} | {quote.Sma} | {quote.UpperBand} | {quote.LowerBand} | {quote.PercentB} | {quote.ZScore} | {quote.Width}");
         }
         return sb.ToString();
     }
@@ -195,7 +179,7 @@ Return the trading signal in this JSON format:
         sb.AppendLine("Date | RSI");
         foreach (var quote in rsi)
         {
-            sb.AppendLine($"{quote.Date} | {quote.Rsi}");
+            sb.AppendLine($"{quote.Date:yyyy-MM-dd HH:mm:ss} | {quote.Rsi}");
         }
         return sb.ToString();
     }
@@ -207,7 +191,7 @@ Return the trading signal in this JSON format:
         sb.AppendLine("Date | MACD | Signal | Histogram");
         foreach (var quote in macd)
         {
-            sb.AppendLine($"{quote.Date} | {quote.Macd} | {quote.Signal} | {quote.Histogram}");
+            sb.AppendLine($"{quote.Date:yyyy-MM-dd HH:mm:ss} | {quote.Macd} | {quote.Signal} | {quote.Histogram}");
         }
         return sb.ToString();
     }
@@ -219,30 +203,8 @@ Return the trading signal in this JSON format:
         sb.AppendLine("Date | OBV");
         foreach (var quote in obv)
         {
-            sb.AppendLine($"{quote.Date} | {quote.Obv}");
+            sb.AppendLine($"{quote.Date:yyyy-MM-dd HH:mm:ss} | {quote.Obv}");
         }
         return sb.ToString();
-    }
-
-    private async Task<List<Quote>> GetMinuteCandleQuote(string market, int unit)
-    {
-        var candleResponse = await this._upbitClient.GetMinuteCandles(unit, new Candles.Request
-        {
-            market = market,
-            count = "100"
-        });
-            
-        return candleResponse.ToQuote();
-    }
-    
-    private async Task<List<Quote>> GetDayCandleQuote(string market)
-    {
-        var candleResponse = await this._upbitClient.GetDayCandles(new DayCandles.Request
-        {
-            market = market,
-            count = "100"
-        });
-            
-        return candleResponse.ToQuote();
     }
 }

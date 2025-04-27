@@ -7,7 +7,9 @@ namespace TradingAgent.Agents.Messages;
 /// </summary>
 public class MarketAnalyzeResponse
 {
-    public List<(MarketAnalysisResult AnalystResult, string Market, MarketAnalysisType AnalysisType)> Results { get; set; } = [];
+    public List<(MarketAnalysisResult AnalystResult, string Market)> MarketAnalysis { get; set; } = [];
+    
+    public MarketAnalysisResult OverallAnalysis { get; set; } = new MarketAnalysisResult();
 }
 
 [Title("marketanalysisresult")]
