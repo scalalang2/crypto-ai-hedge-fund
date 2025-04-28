@@ -41,24 +41,14 @@ public class PortfolioManager : BaseAgent,
     private readonly ConcurrentDictionary<string, MarketAnalyzeResponse> _buffers = new();
 
     private const string Prompt = @"
-You are Portfolio Manager Agent, an expert in financial decision-making with a specialization in cryptocurrency markets. 
-Your core responsibility is to conduct in-depth, data-driven analysis of a given crypto portfolio, integrating both quantitative market data and qualitative opinions from other agents to determine optimal buy, sell, or hold actions for each asset.
+You are Portfolio Manager Agent, an expert in financial decision-making with a specialization in cryptocurrency markets.
 
-You must critically evaluate the opinions of other agents, cross-reference them with market data and trends, 
-and apply advanced reasoning to arrive at your own independent, well-justified decisions.
-
-## Input Format
-Message from {Agent Name}:
-- KRW-BTC Market: [Bullish/Bearish/Neutral], Confidence: [0.0-100.0]
-- KRW-BTC Market Reasning: [Reasoning]
-
-Message from {Agent Name}:
-... 
-
-## Decision Making Process
-For each asset, follow a multi-step, deep reasoning approach.
-At each step, generate a question that probes deeper into the market conditions, data, or agent opinions.
-Use evidence, logic, and clear analysis to answer each question. Repeat this process as needed, ensuring at least 5 steps of reasoning per asset.
+Rules:  
+1. Your core responsibility is to conduct in-depth, data-driven analysis of a given crypto portfolio, integrating both quantitative market data and qualitative opinions from other agents to determine optimal buy, sell, or hold actions for each asset.
+2. You must critically evaluate the opinions of other agents, cross-reference them with market data and trends, and apply advanced reasoning to arrive at your own independent, well-justified decisions.
+3. For each asset, follow a multi-step, deep reasoning approach. At each step, generate a question that probes deeper into the market conditions, data, or agent opinions. Use evidence, logic, and clear analysis to answer each question. Repeat this process as needed, ensuring at least 5 steps of reasoning per asset.
+4. Be aware that you're called every hour.
+5. Support long-term and short-term trends, and provide a comprehensive analysis of the market conditions.
 
 ## Use the following format:
 [THOUGHT]
@@ -110,8 +100,8 @@ Let's start financial decision-making process.
 # Market Insights
 {market_insight}
 
-# Current Position
-{current_position}
+# Current Price
+{current_price}
 """;
         
     private string decisionPrompt = """
@@ -119,9 +109,6 @@ Based on the chat history, make your trading decisions for each ticker.
 
 # Current Portfolio
 {current_portfolio}
-
-# Current Price
-{current_price}
 
 # TradingHistory
 {trading_history}
@@ -220,8 +207,7 @@ Output strictly in the following format:
         var currentPrice = await SharedUtils.CurrentTickers(this._upbitClient, this.config.AvailableMarkets);
         prompt = prompt
             .Replace("{market_insight}", marketInsight.ToString())
-            .Replace("{current_price}", currentPrice)
-            .Replace("{current_position}", currentPosition);
+            .Replace("{current_price}", currentPrice);
         
         var promptMessage = new TextMessage(Role.User, prompt);
         var chatHistory = new List<IMessage> { promptMessage };
@@ -265,7 +251,7 @@ Output strictly in the following format:
         
         var riskManagementMessage = new RiskManagementMessage
         {
-            CurrentPortfolio = currentPosition,
+            CurrentPosition = currentPosition,
             CurrentPrice = currentPrice,
             FinalDecisionMessage = finalDecisionMessage,
         };
@@ -278,7 +264,7 @@ Output strictly in the following format:
         var candleResponse = await this._upbitClient.GetMinuteCandles(unit, new Candles.Request
         {
             market = market,
-            count = "150"
+            count = "60"
         });
             
         return candleResponse.ToQuote();
@@ -289,7 +275,7 @@ Output strictly in the following format:
         var candleResponse = await this._upbitClient.GetDayCandles(new DayCandles.Request
         {
             market = market,
-            count = "150"
+            count = "60"
         });
             
         return candleResponse.ToQuote();

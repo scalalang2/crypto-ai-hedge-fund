@@ -3,6 +3,7 @@ using System.Text.Json;
 using AutoGen.Core;
 using AutoGen.OpenAI;
 using AutoGen.OpenAI.Extension;
+using ConsoleTables;
 using Json.Schema;
 using Json.Schema.Generation;
 using Microsoft.AutoGen.Contracts;
@@ -127,12 +128,21 @@ When providing your reasoning, be thorough and specific by:
         sb.AppendLine("- kijunPeriods = 26");
         sb.AppendLine("- senkouBPeriods = 52");
         sb.AppendLine();
-        sb.AppendLine("Date | ChikouSpan | KijunSen | TenkanSen | SenkouSpanA | SenkouSpanB");
+        
+        var table = new ConsoleTable("Date", "ChikouSpan", "KijunSen", "TenkanSen", "SenkouSpanA", "SenkouSpanB");
 
         foreach (var result in stoch)
         {
-            sb.AppendLine($"{result.Date:yyyy-MM-dd HH:mm:ss} | {result.ChikouSpan:F4} | {result.KijunSen:F4} | {result.TenkanSen:F4} | {result.SenkouSpanA:F4} | {result.SenkouSpanB:F4}");
+            table.AddRow(
+                $"{result.Date:yyyy-MM-dd HH:mm:ss}",
+                $"{result.ChikouSpan:F4}",
+                $"{result.KijunSen:F4}",
+                $"{result.TenkanSen:F4}",
+                $"{result.SenkouSpanA:F4}",
+                $"{result.SenkouSpanB:F4}");
         }
+
+        sb.AppendLine(table.ToString());
         
         return sb.ToString();
     }

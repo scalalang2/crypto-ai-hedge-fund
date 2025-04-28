@@ -3,6 +3,7 @@ using System.Text.Json;
 using AutoGen.Core;
 using AutoGen.OpenAI;
 using AutoGen.OpenAI.Extension;
+using ConsoleTables;
 using Json.Schema;
 using Json.Schema.Generation;
 using Microsoft.AutoGen.Contracts;
@@ -130,13 +131,22 @@ For example, if bearish: "The %K and %D lines are both above 85, signaling overb
         sb.AppendLine("kFactor = 3 // Weight of %K in the %J calculation.");
         sb.AppendLine("dFactor = 2 // Weight of %D in the %J calculation.");
         sb.AppendLine();
-        sb.AppendLine("Date | %K | %D | Signal | Oscillator | J | PercentJ");
+        
+        var table = new ConsoleTable("Date", "%K", "%D", "Signal", "Oscillator", "J", "PercentJ");
 
         foreach (var result in stoch)
         {
-            sb.AppendLine($"{result.Date:yyyy-MM-dd HH:mm:ss} | {result.K:F4} | {result.D:F4} | {result.Signal} | {result.Oscillator:F4} | {result.J:F4} | {result.PercentJ:F2}");
+            table.AddRow(
+                $"{result.Date:yyyy-MM-dd HH:mm:ss}",
+                $"{result.K:F4}",
+                $"{result.D:F4}",
+                $"{result.Signal}",
+                $"{result.Oscillator:F4}",
+                $"{result.J:F4}",
+                $"{result.PercentJ:F2}");
         }
         
+        sb.AppendLine(table.ToString());
         return sb.ToString();
     }
 }

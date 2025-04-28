@@ -34,15 +34,15 @@ A FinalDecisionMessage object with a list of FinalDecision entries. Each FinalDe
 - Confidence: double, 0–100 score.
 - Reasoning: string, explanation of the initial trading decision.
 
-Your tasks:
-1. Evaluate each FinalDecision against the current portfolio state (e.g., existing positions, KRW balance, exposure limits).
-2. Enforce minimum trade sizes:
+Rules:
+1. Your final decision must includes the PortfolioManager's opinions. 
+2. Evaluate each FinalDecision against the current portfolio state (e.g., existing positions, KRW balance, exposure limits).
+3. Enforce minimum trade sizes:
    • Buys must be ≥ 20,000 KRW.  
    • Sells must liquidate at least 20,000 KRW worth of the asset.  
    • If a proposed trade is below the threshold, either adjust Quantity upward to the minimum (if KRW/position allows) or remove the trade.
-3. Do not allocate more than 50% of the total portfolio to any single asset to manage risk.
-4. Avoid recommending any trade that would breach risk limits (e.g., position size, sector concentration) or portfolio margin constraints.
-5. Return a FinalDecisionMessage object containing only valid, adjusted FinalDecisions.
+4. Do not allocate more than 50% of the total portfolio to any single asset to manage risk.
+5. Avoid recommending any trade that would breach risk limits (e.g., position size, sector concentration) or portfolio margin constraints.
 ";
     
     public RiskManagerAgent(
@@ -65,13 +65,13 @@ Your tasks:
 Based on the final decision, evaluate the proposed trades against the current portfolio state and risk limits. 
 Ensure all trades comply with portfolio constraints and API requirements.
 
-# Current Portfolio
-{current_portfolio}
+# Current Position
+{current_position}
 
 # Current Price
 {current_price}
 
-# Final Decision Message
+# Final Decision Message from PortfolioManager
 {final_decision_message}
 
 Output strictly in the following format:
@@ -95,7 +95,7 @@ Output strictly in the following format:
         var jsonString = JsonSerializer.Serialize(item.FinalDecisionMessage);
 
         prompt = prompt
-            .Replace("{current_portfolio}", item.CurrentPortfolio)
+            .Replace("{current_position}", item.CurrentPosition)
             .Replace("{current_price}", item.CurrentPrice)
             .Replace("{final_decision_message}", jsonString);
 
@@ -106,7 +106,7 @@ Output strictly in the following format:
             {
                 OutputSchema = new JsonSchemaBuilder().FromType<FinalDecisionMessage>().Build(),
             });
-        
+                
         var finalDecisionMessage = JsonSerializer.Deserialize<FinalDecisionMessage>(reply.GetContent());
         if (finalDecisionMessage == null)
         {
