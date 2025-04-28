@@ -37,7 +37,7 @@ public class PortfolioManager : BaseAgent,
     private readonly AutoGen.Core.IAgent _decider;
  
     // 버퍼에 3명의 에이전트의 의견이 모여야 최종 결정을 내리게 된다.
-    private const int NumberOfAgents = 2;
+    private const int NumberOfAgents = 3;
     private readonly ConcurrentDictionary<string, MarketAnalyzeResponse> _buffers = new();
 
     private const string Prompt = @"
@@ -97,10 +97,11 @@ You're very talented in financial decision-making, especially in cryptocurrency 
 Given the conversation, you need make a final decision on whether to buy, sell, or hold each asset in the portfolio.
 
 Rules:
-1. Recommend a 'Sell' if the asset has achieved at least a 5% profit from its average purchase price, or if a significant negative trend suggests a stop-loss is necessary (e.g., more than 5% loss). Otherwise, prefer 'Hold'. Only recommend a 'Buy' if there is a strong signal of a potential 5% upside from the current price.
-2. Do not allocate more than 50% of the total portfolio to any single asset to manage risk.
-3. When buying an asset, you MUST specify the amount in KRW (e.g., Buy KRW-SOL with 5,000 KRW).
-4. When selling an asset, you MUST specify the amount of the asset (e.g., Sell 0.1 SOL).
+1. Explain the key signals that influenced your decision.
+2. Details the exact numerical readings and their recent movements.
+3. Recommend a 'Sell' if the asset has achieved at least a 5% profit from its average purchase price, or if a significant negative trend suggests a stop-loss is necessary (e.g., more than 5% loss). Otherwise, prefer 'Hold'. Only recommend a 'Buy' if there is a strong signal of a potential 5% upside from the current price.
+4. When buying an asset, you MUST specify the amount in KRW (e.g., Buy KRW-SOL with 5,000 KRW).
+5. When selling an asset, you MUST specify the amount of the asset (e.g., Sell 0.1 SOL).
 """;
     
     private string prompt = """
@@ -119,6 +120,9 @@ Based on the chat history, make your trading decisions for each ticker.
 # Current Portfolio
 {current_portfolio}
 
+# Current Price
+{current_price}
+
 # TradingHistory
 {trading_history}
 
@@ -129,7 +133,6 @@ Output strictly in the following format:
          "Ticker": "KRW-BTC",
          "Action": "Buy/Sell/Hold",
          "Quantity": double for amount of asset,
-         "Price": current price of asset,
          "Confidence": double between 0 and 100,
          "Reasoning": "string"
      }
@@ -147,18 +150,18 @@ Output strictly in the following format:
         IAgentRuntime runtime, 
         ILogger<BaseAgent> logger, 
         AppConfig config, 
-        IUpbitClient upbitClient, ITradingHistoryService tradingHistoryService) : base(id, runtime, "leader", logger)
+        IUpbitClient upbitClient, ITradingHistoryService tradingHistoryService) : base(id, runtime, "portfoliomanager", logger)
     {
         this.config = config;
         this._upbitClient = upbitClient;
         _tradingHistoryService = tradingHistoryService;
 
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.LeaderAIModel);
-        this._agent = new OpenAIChatAgent(client, "Leader", systemMessage: Prompt)
+        this._agent = new OpenAIChatAgent(client, "Portfolio Manager", systemMessage: Prompt)
             .RegisterMessageConnector()
             .RegisterPrintMessage();
         
-        this._decider = new OpenAIChatAgent(client, "Leader", systemMessage: DecisionPrompt)
+        this._decider = new OpenAIChatAgent(client, "Portfolio Manager", systemMessage: DecisionPrompt)
             .RegisterMessageConnector()
             .RegisterPrintMessage();
     }
@@ -182,6 +185,7 @@ Output strictly in the following format:
 
         await this.PublishMessageAsync(request, new TopicId(nameof(TechnicalAnalystAgent)));
         await this.PublishMessageAsync(request, new TopicId(nameof(GeorgeLaneAgent)));
+        await this.PublishMessageAsync(request, new TopicId(nameof(HosodaGoichiAgent)));
         // await this.PublishMessageAsync(new SentimentAnalyzeRequest(), new TopicId(nameof(SentimentAgent)));
     }
     
@@ -213,8 +217,10 @@ Output strictly in the following format:
         }
         
         var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets);
+        var currentPrice = await SharedUtils.CurrentTickers(this._upbitClient, this.config.AvailableMarkets);
         prompt = prompt
             .Replace("{market_insight}", marketInsight.ToString())
+            .Replace("{current_price}", currentPrice)
             .Replace("{current_position}", currentPosition);
         
         var promptMessage = new TextMessage(Role.User, prompt);
@@ -256,14 +262,15 @@ Output strictly in the following format:
             this._logger.LogError("Failed to parse final decision message");
             return;
         }
-
-        var summaryRequest = new SummaryRequest
-        {
-            Message = reply.GetContent(),
-        };
         
-        await this.PublishMessageAsync(finalDecisionMessage, new TopicId(nameof(TraderAgent)));
-        await this.PublishMessageAsync(summaryRequest, new TopicId(nameof(SummarizerAgent)));
+        var riskManagementMessage = new RiskManagementMessage
+        {
+            CurrentPortfolio = currentPosition,
+            CurrentPrice = currentPrice,
+            FinalDecisionMessage = finalDecisionMessage,
+        };
+
+        await this.PublishMessageAsync(riskManagementMessage, new TopicId(nameof(RiskManagerAgent)));
     }
     
     private async Task<List<Quote>> GetMinuteCandleQuote(string market, int unit)
@@ -271,7 +278,7 @@ Output strictly in the following format:
         var candleResponse = await this._upbitClient.GetMinuteCandles(unit, new Candles.Request
         {
             market = market,
-            count = "100"
+            count = "150"
         });
             
         return candleResponse.ToQuote();
@@ -282,7 +289,7 @@ Output strictly in the following format:
         var candleResponse = await this._upbitClient.GetDayCandles(new DayCandles.Request
         {
             market = market,
-            count = "100"
+            count = "150"
         });
             
         return candleResponse.ToQuote();

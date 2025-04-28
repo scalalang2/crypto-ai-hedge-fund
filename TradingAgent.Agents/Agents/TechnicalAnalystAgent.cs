@@ -78,11 +78,10 @@ Rules:
 """;
     
     public TechnicalAnalystAgent(
-        IUpbitClient upbitClient,
         AgentId id, 
         IAgentRuntime runtime, 
         ILogger<BaseAgent> logger, 
-        AppConfig config) : base(id, runtime, "market agent", logger)
+        AppConfig config) : base(id, runtime, "Technical Analyst", logger)
     {
         this._config = config;
         
@@ -105,10 +104,10 @@ Rules:
         {
             var prompt = """
 Based on the following {chart_type} candlestick for the ticker {ticker}, 
-create a investment signal.
-
-# Candle Data
-{candle_data}
+             create a investment signal.
+             
+             # Candle Data
+             {candle_data}
 
 # Bollinger Bands
 {bollinger_band}
@@ -163,7 +162,7 @@ Return the trading signal in this JSON format:
     private string GetBollingerBand(List<Quote> quotes)
     {
         var sb = new StringBuilder();
-        var band = quotes.GetBollingerBands(20);
+        var band = quotes.GetBollingerBands(20).Condense();
         sb.AppendLine("Date | SMA | UpperBand | LowerBand | PercentB | Z-Score | BandWidth");
         foreach (var quote in band)
         {
@@ -175,7 +174,7 @@ Return the trading signal in this JSON format:
     private string GetRsi(List<Quote> quotes)
     {
         var sb = new StringBuilder();
-        var rsi = quotes.GetRsi(14);
+        var rsi = quotes.GetRsi(14).Condense();
         sb.AppendLine("Date | RSI");
         foreach (var quote in rsi)
         {
@@ -187,7 +186,7 @@ Return the trading signal in this JSON format:
     private string GetMacd(List<Quote> quotes)
     {
         var sb = new StringBuilder();
-        var macd = quotes.GetMacd(12, 26, 9);
+        var macd = quotes.GetMacd(12, 26, 9).Condense();
         sb.AppendLine("Date | MACD | Signal | Histogram");
         foreach (var quote in macd)
         {
@@ -199,7 +198,7 @@ Return the trading signal in this JSON format:
     private string GetObv(List<Quote> quotes)
     {
         var sb = new StringBuilder();
-        var obv = quotes.GetObv();
+        var obv = quotes.GetObv().Condense();
         sb.AppendLine("Date | OBV");
         foreach (var quote in obv)
         {

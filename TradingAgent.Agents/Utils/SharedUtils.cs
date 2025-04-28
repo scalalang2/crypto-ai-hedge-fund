@@ -6,6 +6,25 @@ namespace TradingAgent.Agents.Utils;
 
 public static class SharedUtils
 {
+    public static string CurrentDate()
+    {
+        return DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+    }
+
+    public static async Task<string> CurrentTickers(IUpbitClient upbitClient, List<string> availableMarket)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Ticker | Current Price | Opening Price | High Price | Low Price");
+        var response = await upbitClient.GetTicker(string.Join(",", availableMarket));
+        foreach (var tick in response)
+        {
+            sb.AppendLine($"{tick.market} | {tick.trade_price} | {tick.opening_price} | {tick.high_price} | {tick.low_price}");
+        }
+        
+        sb.AppendLine();
+        return sb.ToString();
+    }
+    
     public static async Task<string> GetCurrentPositionPrompt(IUpbitClient upbitClient, List<string> availableMarket)
     {
         var sb = new StringBuilder();

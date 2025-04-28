@@ -50,7 +50,7 @@ For example, if bearish: "The %K and %D lines are both above 85, signaling overb
         AgentId id, 
         IAgentRuntime runtime, 
         ILogger<BaseAgent> logger,
-        AppConfig config) : base(id, runtime, "GerogeLaneAgent", logger)
+        AppConfig config) : base(id, runtime, "Geroge Lane Agent", logger)
     {
         this._config = config;
         
@@ -118,7 +118,9 @@ For example, if bearish: "The %K and %D lines are both above 85, signaling overb
 
     private string GetStochasticOscillator(List<Quote> marketDataQuotes)
     {
-        var stoch = marketDataQuotes.GetStoch();
+        var stoch = marketDataQuotes
+            .GetStoch()
+            .Condense();
         var sb = new StringBuilder();
 
         sb.AppendLine("Parameters:");
