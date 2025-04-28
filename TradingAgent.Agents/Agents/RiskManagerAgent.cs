@@ -93,10 +93,6 @@ Output strictly in the following format:
 }
 """;
         var jsonString = JsonSerializer.Serialize(item.FinalDecisionMessage);
-        var summaryRequest = new SummaryRequest
-        {
-            Message = jsonString,
-        };
 
         prompt = prompt
             .Replace("{current_portfolio}", item.CurrentPortfolio)
@@ -116,6 +112,11 @@ Output strictly in the following format:
         {
             throw new InvalidOperationException("Failed to deserialize the final decision message.");
         }
+        
+        var summaryRequest = new SummaryRequest
+        {
+            Message = reply.GetContent(),
+        };
         
         await this.PublishMessageAsync(finalDecisionMessage, new TopicId(nameof(TraderAgent)));
         await this.PublishMessageAsync(summaryRequest, new TopicId(nameof(SummarizerAgent)));
