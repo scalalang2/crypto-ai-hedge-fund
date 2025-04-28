@@ -1,20 +1,9 @@
 # Crypto AI Hedge Fund
-[ai-hedge-fund](https://github.com/virattt/ai-hedge-fund)룰 암호화폐 버전으로 만든 실험용 프로젝트입니다.
+멀티-에이전트 프레임워크 [microsoft/AutoGen](https://github.com/microsoft/autogen)을 공부할 겸 [ai-hedge-fund](https://github.com/virattt/ai-hedge-fund)룰 암호화폐 버전으로 만든 실험용 프로젝트입니다.
 
-절대 투자에 사용하지 마세요
+절대 본인 투자에 사용하지 마세요
 
 <img width="1224" alt="image" src="https://github.com/user-attachments/assets/25f49753-3a3b-4512-ba9f-962cf50a357a" />
-
-# 아키텍처
-```
-Participangs
-- LeaderAgent : 총괄 책임자
-- MarketAgent : 시장을 분석하는 에이전트
-- SentimentAgent : 시장의 감정을 분석하는 에이전트
-- RiskManagerAgent : 펀드 매니저의 결정 사항에 대해 리스크를 평가하고 최소화 하기
-- CriticAgent : 펀드 매니저의 행동을 평가하는 에이전트
-- TraderAgent : 실제로 거래를 수행하는 에이전트
-```
 
 # 실행하기
 ## 사전 준비
