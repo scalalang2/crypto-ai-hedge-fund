@@ -62,9 +62,6 @@ Rules:
     public async ValueTask HandleAsync(RiskManagementMessage item, MessageContext messageContext)
     {
         var prompt = @"""
-Based on the final decision, evaluate the proposed trades against the current portfolio state and risk limits. 
-Ensure all trades comply with portfolio constraints and API requirements.
-
 # Current Position
 {current_position}
 
@@ -73,6 +70,9 @@ Ensure all trades comply with portfolio constraints and API requirements.
 
 # Final Decision Message from PortfolioManager
 {final_decision_message}
+
+Based on the final decision, evaluate the proposed trades against the current portfolio state and risk limits.
+Let's think step by step 
 
 Output strictly in the following format:
 {
