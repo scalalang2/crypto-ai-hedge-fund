@@ -87,11 +87,7 @@ The message is
         }
         
         var prompt = $"""
-Please summarize the following text in a clear manner.
-
-Rules:
-You need to speak in Korean.
-
+Please translate the given message in Korean in a clear manner.
 Please use the following format:
 
 **XXX님의 의견 입니다**

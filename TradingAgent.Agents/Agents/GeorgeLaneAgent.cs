@@ -75,6 +75,10 @@ For example, if bearish: "The %K and %D lines are both above 85, signaling overb
             var prompt = """
                          Based on the following {chart_type} candlestick for the ticker {ticker}, 
                          create a investment signal.
+                         
+                         Rules:
+                         - Proivde a data-driven recommentation
+                         - Details the exact value readings and their recent movements
 
                          # Candle Data
                          {candle_data}

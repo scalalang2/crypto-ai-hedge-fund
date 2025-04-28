@@ -105,13 +105,14 @@ Let's start financial decision-making process.
 """;
         
     private string decisionPrompt = """
-Based on the chat history, make your trading decisions for each ticker.
-
 # Current Portfolio
 {current_portfolio}
 
 # TradingHistory
 {trading_history}
+
+Based on the chat history and considering Current Portfolio, make your trading decisions for each ticker.
+Let's think step by step
 
 Output strictly in the following format:
 {

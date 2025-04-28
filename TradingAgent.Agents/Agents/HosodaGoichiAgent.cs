@@ -77,6 +77,10 @@ When providing your reasoning, be thorough and specific by:
                          Based on the following {candle_type} and the Ichimoku Cloud for the ticker {ticker}, 
                          create a investment signal.
                          
+                         Rules:
+                         - Proivde a data-driven recommentation
+                         - Details the exact value readings and their recent movements
+                         
                          # Candle Data
                          {candle_data}
 

@@ -65,10 +65,6 @@ OBV Analysis:
 - OBV falling + price rising: Weak uptrend, possible reversal
 - OBV trendline breakout: Important volume change signal
 
-Rules:
-- Proivde a data-driven recommentation
-- Details the exact value readings and their recent movements
-
 ## Example
 {
     "Signal": "High Bullish",
@@ -104,10 +100,14 @@ Rules:
         {
             var prompt = """
 Based on the following {chart_type} candlestick for the ticker {ticker}, 
-             create a investment signal.
-             
-             # Candle Data
-             {candle_data}
+create a investment signal.
+
+Rules:
+- Proivde a data-driven recommentation
+- Details the exact value readings and their recent movements
+
+# Candle Data
+{candle_data}
 
 # Bollinger Bands
 {bollinger_band}
