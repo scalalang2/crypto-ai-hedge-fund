@@ -146,7 +146,7 @@ When providing your reasoning, be thorough and specific by:
                 $"{result.SenkouSpanB:F4}");
         }
 
-        sb.AppendLine(table.ToString());
+        sb.AppendLine(table.ToMinimalString());
         
         return sb.ToString();
     }

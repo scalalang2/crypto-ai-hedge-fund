@@ -150,7 +150,7 @@ For example, if bearish: "The %K and %D lines are both above 85, signaling overb
                 $"{result.PercentJ:F2}");
         }
         
-        sb.AppendLine(table.ToString());
+        sb.AppendLine(table.ToMinimalString());
         return sb.ToString();
     }
 }

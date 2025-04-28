@@ -26,7 +26,7 @@ public static class SharedUtils
                 tick.low_price);
         }
 
-        return table.ToString();
+        return table.ToMinimalString();
     }
     
     public static async Task<string> GetCurrentPositionPrompt(IUpbitClient upbitClient, List<string> availableMarket)
@@ -46,7 +46,7 @@ public static class SharedUtils
             totalKrw = Convert.ToDouble(response.bid_account.balance);
         }
 
-        var result = table.ToString();
+        var result = table.ToMinimalString();
         result += $"\n\nAvailable Balance : {totalKrw} KRW";
         return result;
     }
@@ -67,7 +67,7 @@ public static class SharedUtils
                 $"{record.LossRate:N3}");
         }
         
-        sb.AppendLine(table.ToString());
+        sb.AppendLine(table.ToMinimalString());
         sb.AppendLine();
         sb.AppendLine($"Total Profit Rate : {await tradingHistoryService.GetTotalProfitRateAsync():N3}");
         sb.AppendLine($"Total Loss Rate : {await tradingHistoryService.GetTotalLossRateAsync():N3}");
