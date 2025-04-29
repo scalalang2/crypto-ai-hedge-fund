@@ -55,7 +55,7 @@ public class AgentRuntime(
         
         var message = new InitMessage { };
         await agentApp.PublishMessageAsync(message, new TopicId(nameof(PortfolioManager)), cancellationToken: cancellationToken).ConfigureAwait(false);
-        await agentApp.WaitForShutdownAsync().ConfigureAwait(false);
+        System.Environment.Exit(0);
     }
 
     private Task MessageReceivedAsync(SocketMessage arg)
