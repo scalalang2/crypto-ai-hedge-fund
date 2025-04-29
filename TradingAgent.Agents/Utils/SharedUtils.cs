@@ -48,7 +48,12 @@ public static class SharedUtils
 
         var result = table.ToMinimalString();
         result += $"\n\nAvailable Balance : {totalKrw} KRW";
-        return result;
+        
+        var sb = new StringBuilder();
+        sb.AppendLine("```");
+        sb.AppendLine(result);
+        sb.AppendLine("```");
+        return sb.ToString();
     }
     
     public static async Task<string> GetTradingHistoryPrompt(ITradingHistoryService tradingHistoryService)
@@ -66,13 +71,15 @@ public static class SharedUtils
                 $"{record.ProfitRate:N3}",
                 $"{record.LossRate:N3}");
         }
-        
+
+        sb.AppendLine("```");
         sb.AppendLine(table.ToMinimalString());
         sb.AppendLine();
         sb.AppendLine($"Total Profit Rate : {await tradingHistoryService.GetTotalProfitRateAsync():N3}");
         sb.AppendLine($"Total Loss Rate : {await tradingHistoryService.GetTotalLossRateAsync():N3}");
         sb.AppendLine($"Total Profit : {await tradingHistoryService.GetTotalProfitAsync():N3}");
         sb.AppendLine($"Total Loss : {await tradingHistoryService.GetTotalLossAsync():N3}");
+        sb.AppendLine("```");
 
         return sb.ToString();
     }

@@ -40,7 +40,7 @@ public class PortfolioManager : BaseAgent,
     private const int NumberOfAgents = 3;
     private readonly ConcurrentDictionary<string, MarketAnalyzeResponse> _buffers = new();
 
-    private const string Prompt = @"
+    private const string SystemPrompt = @"
 You are Portfolio Manager Agent, an expert in financial decision-making with a specialization in cryptocurrency markets.
 
 Rules:  
@@ -82,7 +82,7 @@ Step 2:
 [TERMINATE]
 ";
 
-    private const string DecisionPrompt = @"""
+    private const string DecisionSystemPrompt = @"""
 You're very talented in financial decision-making, especially in cryptocurrency markets.
 Given the conversation, you need make a final decision on whether to buy, sell, or hold each asset in the portfolio.
 
@@ -105,13 +105,16 @@ Let's start financial decision-making process.
 """;
         
     private string decisionPrompt = """
+Based on the chat history and considering Current Portfolio, make your trading decisions for each ticker.
+
 # Current Portfolio
 {current_portfolio}
+
+- Available Balance is the one that you can use to buy assets.
 
 # TradingHistory
 {trading_history}
 
-Based on the chat history and considering Current Portfolio, make your trading decisions for each ticker.
 Let's think step by step
 
 Output strictly in the following format:
@@ -145,11 +148,11 @@ Output strictly in the following format:
         _tradingHistoryService = tradingHistoryService;
 
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.LeaderAIModel);
-        this._agent = new OpenAIChatAgent(client, "Portfolio Manager", systemMessage: Prompt)
+        this._agent = new OpenAIChatAgent(client, "Portfolio Manager", systemMessage: SystemPrompt)
             .RegisterMessageConnector()
             .RegisterPrintMessage();
         
-        this._decider = new OpenAIChatAgent(client, "Portfolio Manager", systemMessage: DecisionPrompt)
+        this._decider = new OpenAIChatAgent(client, "Portfolio Manager", systemMessage: DecisionSystemPrompt)
             .RegisterMessageConnector()
             .RegisterPrintMessage();
     }

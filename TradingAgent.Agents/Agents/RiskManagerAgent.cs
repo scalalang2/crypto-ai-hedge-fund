@@ -35,7 +35,7 @@ A FinalDecisionMessage object with a list of FinalDecision entries. Each FinalDe
 - Reasoning: string, explanation of the initial trading decision.
 
 Rules:
-1. Your final decision must includes the PortfolioManager's opinions. 
+1. Your final decision MUST includes the PortfolioManager's opinions. 
 2. Evaluate each FinalDecision against the current portfolio state (e.g., existing positions, KRW balance, exposure limits).
 3. Enforce minimum trade sizes:
    • Buys must be ≥ 20,000 KRW.  
