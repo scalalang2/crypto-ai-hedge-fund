@@ -3,7 +3,7 @@
 
 절대 본인 투자에 사용하지 마세요
 
-<img width="1224" alt="image" src="https://github.com/user-attachments/assets/25f49753-3a3b-4512-ba9f-962cf50a357a" />
+![screenshot](https://github.com/user-attachments/assets/239a2abe-8643-4cc3-aa60-801226cc8719)
 
 # 실행하기
 ## 사전 준비
