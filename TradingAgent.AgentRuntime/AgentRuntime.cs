@@ -53,16 +53,8 @@ public class AgentRuntime(
         _client.MessageReceived += MessageReceivedAsync;
         await _client.StartAsync();
         
-        // TODO. Configure the interval from config
-        var interval = TimeSpan.FromMinutes(60);
-        var timer = new PeriodicTimer(interval);
-        
         var message = new InitMessage { };
-        do
-        {
-            await agentApp.PublishMessageAsync(message, new TopicId(nameof(PortfolioManager)), cancellationToken: cancellationToken).ConfigureAwait(false);
-        } while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false));
-        
+        await agentApp.PublishMessageAsync(message, new TopicId(nameof(PortfolioManager)), cancellationToken: cancellationToken).ConfigureAwait(false);
         await agentApp.WaitForShutdownAsync().ConfigureAwait(false);
     }
 
