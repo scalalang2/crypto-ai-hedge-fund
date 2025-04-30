@@ -8,6 +8,11 @@ public class TradingHistoryService : ITradingHistoryService
     private readonly string _historyFilePath = "trade_history.json";
     private readonly List<TradeHistoryRecord> _tradeHistoryRecords = new List<TradeHistoryRecord>();
     
+    public TradingHistoryService()
+    {
+        LoadHistoryFromFile();
+    }
+    
     public async Task AddTradeHistoryAsync(TradeHistoryRecord record)
     {
         _tradeHistoryRecords.Add(record);
