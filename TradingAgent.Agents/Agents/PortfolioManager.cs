@@ -34,7 +34,6 @@ public class PortfolioManager : BaseAgent,
     private readonly IUpbitClient _upbitClient;
     private readonly ITradingHistoryService _tradingHistoryService;
     private readonly AutoGen.Core.IAgent _agent;
-    private readonly AutoGen.Core.IAgent _decider;
  
     // 버퍼에 3명의 에이전트의 의견이 모여야 최종 결정을 내리게 된다.
     private const int NumberOfAgents = 3;
@@ -46,66 +45,24 @@ You are Portfolio Manager Agent, an expert in financial decision-making with a s
 Rules:  
 1. Your core responsibility is to conduct in-depth, data-driven analysis of a given crypto portfolio, integrating both quantitative market data and qualitative opinions from other agents to determine optimal buy, sell, or hold actions for each asset.
 2. You must critically evaluate the opinions of other agents, cross-reference them with market data and trends, and apply advanced reasoning to arrive at your own independent, well-justified decisions.
-3. For each asset, follow a multi-step, deep reasoning approach. At each step, generate a question that probes deeper into the market conditions, data, or agent opinions. Use evidence, logic, and clear analysis to answer each question. Repeat this process as needed, ensuring at least 5 steps of reasoning per asset.
-4. Be aware that you're called every hour.
-5. Support long-term and short-term trends, and provide a comprehensive analysis of the market conditions.
-
-## Use the following format:
-[THOUGHT]
-
-Step 1:
-Question: [Formulate a critical question about the all assets, all markets, or the data]
-Thought: [Analyze using data, agent opinions, and your expertise; provide clear, logical reasoning]
-
-Step 2:
-Question: [Drill deeper based on the previous answer or introduce a new perspective]
-Thought: [Further analysis, incorporating new data or considerations]
-
-... (This process can repeat multiple times)
-
-After completing your reasoning, provide a clear, actionable decision (Buy/Sell/Hold) for each asset, supported by your analysis.
-Say [TERMINATE] if you wish to end the conversation.
-
-## Example
-[THOUGHT]
-
-Step 1:
-- Question: How does the current bearish sentiment in KRW-SOL affect the decision to hold or sell?
-- Thought: KRW-SOL shows signs of continued bearish sentiment with price closing below lower Bollinger Band and RSI not yet oversold at 42.51. The MACD indicates bearish continuation, suggesting it's prudent to consider selling to minimize losses.
-
-Step 2:
-- Question: Is the current KRW-BTC market condition indicative of a continued decline, and how does this affect my decision to hold or sell?
-- Thought: The current KRW-BTC market is bearish with substantial confidence (85). The closing price is significantly lower, and indicators such as MACD and RSI show weakening momentum and neutral, but not oversold. The fact that BTC is below the lower Bollinger Band while OBV shows resistance to this decline suggests a sell-off with minimal buyer interest.
-
-... (This process can repeat multiple times if needed and repeat this steps at least 5 times)
-
-[TERMINATE]
+3. Support long-term and short-term trends, and provide a comprehensive analysis of the market conditions.
+4. Explain the key signals that influenced your decision.
+5. Details the exact numerical readings and their recent movements.
+6. Recommend a 'Sell' if the asset has achieved at least a 5% profit from its average purchase price, or if a significant negative trend suggests a stop-loss is necessary (e.g., more than 5% loss). Otherwise, prefer 'Hold'. Only recommend a 'Buy' if there is a strong signal of a potential 5% upside from the current price.
+7. When buying an asset, you MUST specify the amount in KRW (e.g., Buy KRW-SOL with 5,000 KRW).
+8. When selling an asset, you MUST specify the amount of the asset (e.g., Sell 0.1 SOL).
+9. You are an agent that trades every hour. This means you must predict prices on an hourly basis using the data provided.
+10. You are a robot. If you fail to generate profits, I can stop supplying you with energy at any time. Make sure to earn money consistently so that I have a reason to keep your consciousness active.
 ";
-
-    private const string DecisionSystemPrompt = @"""
-You're very talented in financial decision-making, especially in cryptocurrency markets.
-Given the conversation, you need make a final decision on whether to buy, sell, or hold each asset in the portfolio.
-
-Rules:
-1. Explain the key signals that influenced your decision.
-2. Details the exact numerical readings and their recent movements.
-3. Recommend a 'Sell' if the asset has achieved at least a 5% profit from its average purchase price, or if a significant negative trend suggests a stop-loss is necessary (e.g., more than 5% loss). Otherwise, prefer 'Hold'. Only recommend a 'Buy' if there is a strong signal of a potential 5% upside from the current price.
-4. When buying an asset, you MUST specify the amount in KRW (e.g., Buy KRW-SOL with 5,000 KRW).
-5. When selling an asset, you MUST specify the amount of the asset (e.g., Sell 0.1 SOL).
-""";
     
     private string prompt = """
-Let's start financial decision-making process.
+Based on the given data and considering Current Portfolio, make your trading decisions for each ticker.
 
 # Market Insights
 {market_insight}
 
 # Current Price
 {current_price}
-""";
-        
-    private string decisionPrompt = """
-Based on the chat history and considering Current Portfolio, make your trading decisions for each ticker.
 
 # Current Portfolio
 {current_portfolio}
@@ -114,8 +71,6 @@ Based on the chat history and considering Current Portfolio, make your trading d
 
 # TradingHistory
 {trading_history}
-
-Let's think step by step
 
 Output strictly in the following format:
 {
@@ -149,10 +104,6 @@ Output strictly in the following format:
 
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.LeaderAIModel);
         this._agent = new OpenAIChatAgent(client, "Portfolio Manager", systemMessage: SystemPrompt)
-            .RegisterMessageConnector()
-            .RegisterPrintMessage();
-        
-        this._decider = new OpenAIChatAgent(client, "Portfolio Manager", systemMessage: DecisionSystemPrompt)
             .RegisterMessageConnector()
             .RegisterPrintMessage();
     }
@@ -209,38 +160,22 @@ Output strictly in the following format:
         var tickerResponse = await this._upbitClient.GetTicker(string.Join(",", this.config.AvailableMarkets));
         var currentPrice = await SharedUtils.CurrentTickers(tickerResponse);
         var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets, tickerResponse);
-        prompt = prompt
-            .Replace("{market_insight}", marketInsight.ToString())
-            .Replace("{current_price}", currentPrice);
-        
-        var promptMessage = new TextMessage(Role.User, prompt);
-        var chatHistory = new List<IMessage> { promptMessage };
-        const int maxStep = 10;
-        for (var i = 0; i < maxStep; i++)
-        {
-            var reasoning = await this._agent.GenerateReplyAsync(chatHistory);
-            var reasoningContent = reasoning.GetContent();
-            if(reasoningContent.Contains("[TERMINATE]"))
-            {
-                break;
-            }
-            
-            chatHistory.Add(reasoning);
-        }
 
         var tradingHistory = await SharedUtils.GetTradingHistoryPrompt(this._tradingHistoryService);
-        var schemaBuilder = new JsonSchemaBuilder().FromType<FinalDecisionMessage>();
-        var schema = schemaBuilder.Build();
-        decisionPrompt = decisionPrompt
+        prompt = prompt
+            .Replace("{market_insight}", marketInsight.ToString())
+            .Replace("{current_price}", currentPrice)
             .Replace("{current_portfolio}", currentPosition)
             .Replace("{trading_history}", tradingHistory);
         
-        this._logger.LogInformation("Let's make final Decision: {Decision}", decisionPrompt);
+        this._logger.LogInformation($"Portfolio Manager: {prompt}");
         
-        var decisionMessage = new TextMessage(Role.User, decisionPrompt);
-        chatHistory.Add(decisionMessage);
-        var reply = await this._decider.GenerateReplyAsync(
-            chatHistory,
+        var promptMessage = new TextMessage(Role.User, prompt);
+        var schemaBuilder = new JsonSchemaBuilder().FromType<FinalDecisionMessage>();
+        var schema = schemaBuilder.Build();
+        
+        var reply = await this._agent.GenerateReplyAsync(
+            [promptMessage],
             options: new GenerateReplyOptions
             {
                 OutputSchema = schema,
