@@ -116,8 +116,7 @@ For example, if bearish: "The %K and %D lines are both above 85, signaling overb
             
             response.MarketAnalysis.Add((analysisResult, marketData.Ticker));
         }
-
-        await this.PublishMessageAsync(response, new TopicId(nameof(SummarizerAgent)));
+        
         await this.PublishMessageAsync(response, new TopicId(nameof(PortfolioManager)));
     }
 

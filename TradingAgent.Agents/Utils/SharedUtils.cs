@@ -12,11 +12,10 @@ public static class SharedUtils
         return DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
     }
 
-    public static async Task<string> CurrentTickers(IUpbitClient upbitClient, List<string> availableMarket)
+    public static async Task<string> CurrentTickers(List<Ticker> tickers)
     {
         var table = new ConsoleTable("Ticker", "Current Price", "Opening Price", "High Price", "Low Price");
-        var response = await upbitClient.GetTicker(string.Join(",", availableMarket));
-        foreach (var tick in response)
+        foreach (var tick in tickers)
         {
             table.AddRow(
                 tick.market,
@@ -29,9 +28,9 @@ public static class SharedUtils
         return table.ToMinimalString();
     }
     
-    public static async Task<string> GetCurrentPositionPrompt(IUpbitClient upbitClient, List<string> availableMarket)
+    public static async Task<string> GetCurrentPositionPrompt(IUpbitClient upbitClient, List<string> availableMarket, List<Ticker> tickerResponse)
     {
-        var table = new ConsoleTable("Market", "Amount", "Avg Price", "Buying Fee", "Selling Fee", "Minimum Buying Amount (KRW)", "Minimum Selling Amount (KRW)");
+        var table = new ConsoleTable("Market", "Amount", "Average Buying Price", "Current Price");
         var totalKrw = 0d;
         foreach (var market in availableMarket)
         {
@@ -42,7 +41,14 @@ public static class SharedUtils
             var response = await upbitClient.GetChance(request);
             await Task.Delay(200);
             
-            table.AddRow(market, response.ask_account.balance, response.ask_account.avg_buy_price, response.bid_fee, response.ask_fee, response.market.bid.min_total, response.market.ask.min_total);
+            var ticker = tickerResponse.FirstOrDefault(t => t.market == market);
+            if (ticker == null)
+            {
+                continue;
+            }
+            
+            var currentPrice = ticker.trade_price;
+            table.AddRow(market, response.ask_account.balance, response.ask_account.avg_buy_price, $"{currentPrice:N8}");
             totalKrw = Convert.ToDouble(response.bid_account.balance);
         }
 

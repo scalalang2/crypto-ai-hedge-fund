@@ -154,8 +154,7 @@ Return the trading signal in this JSON format:
             
             response.MarketAnalysis.Add((analysisResult, marketData.Ticker));
         }
-
-        await this.PublishMessageAsync(response, new TopicId(nameof(SummarizerAgent)));
+        
         await this.PublishMessageAsync(response, new TopicId(nameof(PortfolioManager)));
     }
 

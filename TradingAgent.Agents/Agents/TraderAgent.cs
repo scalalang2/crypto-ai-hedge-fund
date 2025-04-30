@@ -39,6 +39,12 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
 
     public async ValueTask HandleAsync(FinalDecisionMessage item, MessageContext messageContext)
     {
+        var ticker = await this._upbitClient.GetTicker(string.Join(",", this.config.AvailableMarkets));
+        if (ticker.Count == 0)
+        {
+            throw new Exception($"Ticker not found");
+        }
+        
         try
         {
             foreach (var decision in item.FinalDecisions)
@@ -47,9 +53,15 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
                 {
                     continue;
                 }
+                
+                var price = ticker.FirstOrDefault(x => x.market == decision.Ticker)?.trade_price;
+                if (price == null)
+                {
+                    throw new Exception($"Ticker {decision.Ticker} not found");
+                }
 
-                await Task.Delay(1000); // rest to avoid rate limit
-                await this.PlaceOrder(decision);
+                await Task.Delay(500); // rest to avoid rate limit
+                await this.PlaceOrder(decision, price.Value);
             }
         }
         catch (Exception ex)
@@ -59,14 +71,14 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
         }
         finally
         {
-            var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets);
+            var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets, ticker);
             var tradingHistory = await SharedUtils.GetTradingHistoryPrompt(this._tradingHistoryService);
             await this._messageSender.SendMessage($"**Current Position**\n{currentPosition}\n");
             await this._messageSender.SendMessage($"**Trading History**\n{tradingHistory}\n");
         }
     }
 
-    public async Task PlaceOrder(FinalDecision decision)
+    public async Task PlaceOrder(FinalDecision decision, double price)
     {
         const string buy = "Buy";
         const string sell = "Sell";
@@ -75,15 +87,8 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
         {
             throw new ArgumentException($"Invalid action. Only 'buy' and 'sell' are allowed. but {decision.Action} was given");
         }
-        
-        var ticker = await this._upbitClient.GetTicker(decision.Ticker);
-        if (ticker.Count == 0)
-        {
-            throw new Exception($"Ticker {decision.Ticker} not found");
-        }
             
         // 거래 금액이 2만원 미만이면 그냥 무시
-        var price = Convert.ToDouble(ticker[0].trade_price);
         if(price * decision.Quantity < 20000)
         {
             return;
@@ -112,6 +117,8 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
         
         // 주문 시작
         await this._upbitClient.PlaceOrder(request);
+        
+        await Task.Delay(500);
 
         // 판매인 경우 매매 기록을 추가한다.
         if (decision.Action == sell)

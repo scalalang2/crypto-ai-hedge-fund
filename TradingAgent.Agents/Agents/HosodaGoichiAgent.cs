@@ -117,8 +117,7 @@ When providing your reasoning, be thorough and specific by:
             
             response.MarketAnalysis.Add((analysisResult, marketData.Ticker));
         }
-
-        await this.PublishMessageAsync(response, new TopicId(nameof(SummarizerAgent)));
+        
         await this.PublishMessageAsync(response, new TopicId(nameof(PortfolioManager)));
     }
 

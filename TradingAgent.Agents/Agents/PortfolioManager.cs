@@ -177,7 +177,6 @@ Output strictly in the following format:
         await this.PublishMessageAsync(request, new TopicId(nameof(TechnicalAnalystAgent)));
         await this.PublishMessageAsync(request, new TopicId(nameof(GeorgeLaneAgent)));
         await this.PublishMessageAsync(request, new TopicId(nameof(HosodaGoichiAgent)));
-        // await this.PublishMessageAsync(new SentimentAnalyzeRequest(), new TopicId(nameof(SentimentAgent)));
     }
     
     public async ValueTask HandleAsync(MarketAnalyzeResponse item, MessageContext messageContext)
@@ -207,8 +206,9 @@ Output strictly in the following format:
             marketInsight.AppendLine();
         }
         
-        var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets);
-        var currentPrice = await SharedUtils.CurrentTickers(this._upbitClient, this.config.AvailableMarkets);
+        var tickerResponse = await this._upbitClient.GetTicker(string.Join(",", this.config.AvailableMarkets));
+        var currentPrice = await SharedUtils.CurrentTickers(tickerResponse);
+        var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this.config.AvailableMarkets, tickerResponse);
         prompt = prompt
             .Replace("{market_insight}", marketInsight.ToString())
             .Replace("{current_price}", currentPrice);
@@ -260,6 +260,12 @@ Output strictly in the following format:
             FinalDecisionMessage = finalDecisionMessage,
         };
 
+        var summaryRequest = new SummaryRequest
+        {
+            Message = reply.GetContent(),
+        };
+        
+        await this.PublishMessageAsync(summaryRequest, new TopicId(nameof(SummarizerAgent)));
         await this.PublishMessageAsync(riskManagementMessage, new TopicId(nameof(RiskManagerAgent)));
     }
     
