@@ -65,13 +65,14 @@ public static class SharedUtils
     public static async Task<string> GetTradingHistoryPrompt(ITradingHistoryService tradingHistoryService)
     {
         var sb = new StringBuilder();
-        var table = new ConsoleTable("Date", "Ticker", "Buying Price", "Selling Price", "Profit Rate", "Loss Rate");
+        var table = new ConsoleTable("Date", "Ticker", "Amount", "Buying Price", "Selling Price", "Profit Rate", "Loss Rate");
         var tradeHistory = await tradingHistoryService.GetTradeHistoryAsync(10);
         foreach (var record in tradeHistory)
         {
             table.AddRow(
                 $"{record.Date:yyyy-MM-dd HH:mm:ss}",
                 record.Ticker,
+                $"{record.Amount:N8}",
                 $"{record.BuyingPrice:N2}",
                 $"{record.SellingPrice:N2}",
                 $"{record.ProfitRate:N3}",
