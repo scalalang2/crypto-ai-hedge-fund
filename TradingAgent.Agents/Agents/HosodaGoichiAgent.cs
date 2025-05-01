@@ -32,20 +32,12 @@ Your analysis must be rooted in the principles and philosophy developed by Goich
 Your task:
 Analyze the current Ichimoku Cloud data and provide a trading decision (buy, sell or hold), with a thorough, step-by-step explanation rooted in Ichimoku principles.
 
-Your reasoning must include:
-1. The position of price relative to the Kumo (Cloud): Is price above, below, or inside the Cloud? What does this indicate about trend direction and strength?
-2. The relationship between Tenkan-sen and Kijun-sen: Has a bullish (Tenkan above Kijun) or bearish (Tenkan below Kijun) crossover occurred? Is this supported by price action?
-3. The configuration and thickness of the Kumo: Is the Cloud thick (strong support/resistance) or thin (weak)? Is it bullish (Senkou A above Senkou B) or bearish (Senkou A below Senkou B)? What does the future Kumo suggest?
-4. The position of Chikou Span relative to price and the Cloud: Is the lagging span confirming the trend or signaling potential reversal?
-5. The alignment of all five Ichimoku components: Are they in agreement, or are there conflicting signals?
-6. The overall equilibrium or disequilibrium in the market, reflecting Hosoda’s philosophy that markets seek balance but can swing to extremes.
-
-When providing your reasoning, be thorough and specific by:
-1. Explaining the key Ichimoku signals that influenced your decision (Cloud breakout/breakdown, crossovers, Chikou confirmation, Kumo shape).
-2. Detailing the configuration of each Ichimoku component and how they interact.
-3. Describing the strength and direction of the trend, and whether the market is trending or consolidating.
-4. Citing the most critical support and resistance levels defined by the Cloud.
-5. Using Hosoda’s holistic, equilibrium-focused voice and style in your explanation.
+Rules:
+1. Proivde a data-driven recommentation
+2. Details the exact value readings and their recent movements
+3. You must prioritize a long-term investment perspective. Focus on maximizing portfolio growth over months, not just hours or days. Avoid excessive trading and only act when strong signals align with long-term value creation.
+4. Your monthly profit target is 10%. Structure your buy, sell, and hold recommendations to achieve this target while managing risk and maintaining a disciplined, long-term approach.
+5. When evaluating assets, always consider both short-term market signals and long-term growth potential. Clearly explain how your recommendations support the long-term goal and the monthly target.
 """;
 
     public HosodaGoichiAgent(
@@ -74,7 +66,7 @@ When providing your reasoning, be thorough and specific by:
         foreach (var marketData in item.MarketDataList)
         {
             var prompt = """
-                         Based on the following {candle_type} and the Ichimoku Cloud for the ticker {ticker}, 
+                         Based on the following the data for the ticker {ticker}, 
                          create a investment signal.
                          
                          Rules:
@@ -84,9 +76,6 @@ When providing your reasoning, be thorough and specific by:
                          # Candle Data
                          {candle_data}
 
-                         # Ichimoku Cloud
-                         {ichimoku_cloud}
-
                          Return the trading signal in this JSON format:
                          {
                              "Signal": "bullish/bearish/neutral",
@@ -94,12 +83,34 @@ When providing your reasoning, be thorough and specific by:
                              "Reasoning": "string"
                          }
                          """;
+            
+            var candleDataStr = new StringBuilder();
+            foreach (var data in marketData.CandleData)
+            {
+                switch (data.QuoteType)
+                {
+                    case QuoteType.DayCandle:
+                        candleDataStr.AppendLine("## Daily Candle Data");
+                        break;
+                    case QuoteType.FourHourCandle:
+                        candleDataStr.AppendLine("## 4-Hour Candle Data");
+                        break;
+                    case QuoteType.HourCandle:
+                        candleDataStr.AppendLine("## 1-Hour Candle Data");
+                        break;
+                }
+                
+                candleDataStr.AppendLine(data.Quotes.ToReadableString());
+                candleDataStr.AppendLine();
+                
+                candleDataStr.AppendLine("### Ichimoku Cloud Data");
+                candleDataStr.AppendLine(this.GetIchimokuCloud(data.Quotes));
+                candleDataStr.AppendLine();
+            }
 
             prompt = prompt
                 .Replace("{ticker}", marketData.Ticker)
-                .Replace("{candle_type}", marketData.QuoteType.ToReadableString())
-                .Replace("{candle_data}", marketData.Quotes.ToReadableString())
-                .Replace("{ichimoku_cloud}", this.GetIchimokuCloud(marketData.Quotes));
+                .Replace("{candle_data}", candleDataStr.ToString());
 
             var message = new TextMessage(Role.User, prompt);
             var reply = await this._agent.GenerateReplyAsync(

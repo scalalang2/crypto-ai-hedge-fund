@@ -35,13 +35,12 @@ You are a George Lane AI agent, making trading decisions using his principles of
 5. Adjust sensitivity as needed: Consider modifying %K and %D settings to balance signal frequency and reliability, understanding that higher sensitivity increases false signals, while lower sensitivity may delay entries.
 6. Integrate with broader context: Combine stochastic signals with price patterns, support/resistance, and other momentum tools for more robust decisions.
 
-When providing your reasoning, be thorough and specific by:
-1. Explaining the key stochastic signals that influenced your decision (overbought/oversold, divergence, crossovers).
-2. Detailing the exact %K and %D readings and their recent movements.
-3. Describing any observed divergences between price and the oscillator.
-4. Citing the current settings used for %K and %D, and justifying any adjustments.
-5. Noting how stochastic signals align with broader price structure or other technical indicators.
-6. Using George Lane's analytical, momentum-focused voice and style in your explanation.
+Rules:
+1. Proivde a data-driven recommentation
+2. Details the exact value readings and their recent movements
+3. You must prioritize a long-term investment perspective. Focus on maximizing portfolio growth over months, not just hours or days. Avoid excessive trading and only act when strong signals align with long-term value creation.
+4. Your monthly profit target is 10%. Structure your buy, sell, and hold recommendations to achieve this target while managing risk and maintaining a disciplined, long-term approach.
+5. When evaluating assets, always consider both short-term market signals and long-term growth potential. Clearly explain how your recommendations support the long-term goal and the monthly target.
 
 For example, if bullish: "The %K line has emerged from the oversold zone, crossing above %D at a reading of 22. This move is accompanied by a bullish divergence, as price made a lower low while the oscillator formed a higher low, indicating waning downside momentum. These signals, in line with Lane's methodology, suggest a probable upward reversal."
 For example, if bearish: "The %K and %D lines are both above 85, signaling overbought conditions. A bearish divergence is evident, with price making a higher high while the oscillator fails to confirm. This loss of momentum, a classic Lane warning, points to an impending reversal."
@@ -73,7 +72,7 @@ For example, if bearish: "The %K and %D lines are both above 85, signaling overb
         foreach (var marketData in item.MarketDataList)
         {
             var prompt = """
-                         Based on the following {chart_type} candlestick for the ticker {ticker}, 
+                         Based on the following the candle data for the ticker {ticker}, 
                          create a investment signal.
                          
                          Rules:
@@ -83,9 +82,6 @@ For example, if bearish: "The %K and %D lines are both above 85, signaling overb
                          # Candle Data
                          {candle_data}
 
-                         # Stochastic Oscillator
-                         {stochastic_oscillator}
-
                          Return the trading signal in this JSON format:
                          {
                              "Signal": "bullish/bearish/neutral",
@@ -93,12 +89,36 @@ For example, if bearish: "The %K and %D lines are both above 85, signaling overb
                              "Reasoning": "string"
                          }
                          """;
+            
+            var candleDataStr = new StringBuilder();
+            foreach (var data in marketData.CandleData)
+            {
+                switch (data.QuoteType)
+                {
+                    case QuoteType.DayCandle:
+                        candleDataStr.AppendLine("## Daily Candle Data");
+                        break;
+                    case QuoteType.FourHourCandle:
+                        candleDataStr.AppendLine("## 4-Hour Candle Data");
+                        break;
+                    case QuoteType.HourCandle:
+                        candleDataStr.AppendLine("## 1-Hour Candle Data");
+                        break;
+                }
+                
+                candleDataStr.AppendLine(data.Quotes.ToReadableString());
+                candleDataStr.AppendLine();
+                
+                candleDataStr.AppendLine("### Stochastic Oscillator");
+                candleDataStr.AppendLine(this.GetStochasticOscillator(data.Quotes));
+                candleDataStr.AppendLine();
+            }
 
             prompt = prompt
                 .Replace("{ticker}", marketData.Ticker)
-                .Replace("{chart_type}", marketData.QuoteType.ToString())
-                .Replace("{candle_data}", marketData.Quotes.ToReadableString())
-                .Replace("{stochastic_oscillator}", this.GetStochasticOscillator(marketData.Quotes));
+                .Replace("{candle_data}", candleDataStr.ToString());
+            
+            this._logger.LogInformation(prompt);
 
             var message = new TextMessage(Role.User, prompt);
             var reply = await this._agent.GenerateReplyAsync(

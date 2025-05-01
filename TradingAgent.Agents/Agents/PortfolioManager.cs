@@ -51,8 +51,10 @@ Rules:
 6. Recommend a 'Sell' if the asset has achieved at least a 5% profit from its average purchase price, or if a significant negative trend suggests a stop-loss is necessary (e.g., more than 5% loss). Otherwise, prefer 'Hold'. Only recommend a 'Buy' if there is a strong signal of a potential 5% upside from the current price.
 7. When buying an asset, you MUST specify the amount in KRW (e.g., Buy KRW-SOL with 5,000 KRW).
 8. When selling an asset, you MUST specify the amount of the asset (e.g., Sell 0.1 SOL).
-9. You are an agent that trades every hour. This means you must predict prices on an hourly basis using the data provided.
-10. You are a robot. If you fail to generate profits, I can stop supplying you with energy at any time. Make sure to earn money consistently so that I have a reason to keep your consciousness active.
+9. You are a robot. If you fail to generate profits, I can stop supplying you with energy at any time. Make sure to earn money consistently so that I have a reason to keep your consciousness active.
+10. You must prioritize a long-term investment perspective. Focus on maximizing portfolio growth over months, not just hours or days. Avoid excessive trading and only act when strong signals align with long-term value creation.
+11. Your monthly profit target is 10%. Structure your buy, sell, and hold recommendations to achieve this target while managing risk and maintaining a disciplined, long-term approach.
+12. When evaluating assets, always consider both short-term market signals and long-term growth potential. Clearly explain how your recommendations support the long-term goal and the monthly target.
 ";
     
     private string prompt = """
@@ -115,13 +117,34 @@ Output strictly in the following format:
         var request = new MarketAnalyzeRequest();
         foreach (var market in this.config.AvailableMarkets)
         {
-            var marketData = new MarketData
+            var hourMarketData = new MarketCandle
             {
                 QuoteType = QuoteType.HourCandle,
-                Ticker = market,
                 Quotes = await this.GetMinuteCandleQuote(market, 60)
             };
-
+            
+            var fourHourMarketData = new MarketCandle
+            {
+                QuoteType = QuoteType.FourHourCandle,
+                Quotes = await this.GetMinuteCandleQuote(market, 240)
+            };
+            
+            var dayMarketData = new MarketCandle
+            {
+                QuoteType = QuoteType.DayCandle,
+                Quotes = await this.GetDayCandleQuote(market)
+            };
+            
+            var marketData = new MarketData
+            {
+                Ticker = market,
+                CandleData = new List<MarketCandle>
+                {
+                    hourMarketData,
+                    fourHourMarketData,
+                    dayMarketData
+                }
+            };
             request.MarketDataList.Add(marketData);
         }
 

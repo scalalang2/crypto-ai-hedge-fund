@@ -40,30 +40,9 @@ You will receive the following data:
 4. MACD (12 fast period, 26 slow period, 9 signal period)
 5. OBV (On-Balance Volume)
 
-Bollinger Bands Analysis:
-- Price approaching/breaking upper band: Possible bullish signal
-- Price approaching/breaking lower band: Possible bearish signal
-- %B > 0.8: Possible overbought condition
-- %B < 0.2: Possible oversold condition
-- Bandwidth expansion: Increased volatility and potential trend strengthening
-- Bandwidth contraction: Decreased volatility and potential trend reversal
-
-RSI Analysis:
-- RSI > 70: Overbought condition, possible downward reversal
-- RSI < 30: Oversold condition, possible upward reversal
-- RSI trendline breakout: Important momentum change signal
-- Divergence pattern: Strong reversal signal
-
-MACD Analysis:
-- MACD line crossing above signal line: Bullish signal
-- MACD line crossing below signal line: Bearish signal
-- Histogram expansion: Current trend strengthening
-- Divergence occurrence: Trend weakening or reversal signal
-
-OBV Analysis:
-- OBV rising + price rising: Confirmed strong uptrend
-- OBV falling + price rising: Weak uptrend, possible reversal
-- OBV trendline breakout: Important volume change signal
+Rules:
+- Provide a data-driven recommendation
+- Detail the exact value readings and their recent movements
 
 ## Example
 {
@@ -99,27 +78,18 @@ OBV Analysis:
         foreach (var marketData in item.MarketDataList)
         {
             var prompt = """
-Based on the following {chart_type} candlestick for the ticker {ticker}, 
+Based on the following the candle data for the ticker {ticker}, 
 create a investment signal.
 
 Rules:
-- Proivde a data-driven recommentation
-- Details the exact value readings and their recent movements
+1. Proivde a data-driven recommentation
+2. Details the exact value readings and their recent movements
+3. You must prioritize a long-term investment perspective. Focus on maximizing portfolio growth over months, not just hours or days. Avoid excessive trading and only act when strong signals align with long-term value creation.
+4. Your monthly profit target is 10%. Structure your buy, sell, and hold recommendations to achieve this target while managing risk and maintaining a disciplined, long-term approach.
+5. When evaluating assets, always consider both short-term market signals and long-term growth potential. Clearly explain how your recommendations support the long-term goal and the monthly target.
 
 # Candle Data
 {candle_data}
-
-# Bollinger Bands
-{bollinger_band}
-
-# RSI
-{rsi}
-
-# MACD
-{macd}
-
-# OBV
-{obv}
 
 Return the trading signal in this JSON format:
 {
@@ -128,15 +98,42 @@ Return the trading signal in this JSON format:
     "Reasoning": "string"
 }
 """;
+            var candleDataStr = new StringBuilder();
+            foreach (var data in marketData.CandleData)
+            {
+                switch (data.QuoteType)
+                {
+                    case QuoteType.DayCandle:
+                        candleDataStr.AppendLine("## Daily Candle Data");
+                        break;
+                    case QuoteType.FourHourCandle:
+                        candleDataStr.AppendLine("## 4-Hour Candle Data");
+                        break;
+                    case QuoteType.HourCandle:
+                        candleDataStr.AppendLine("## 1-Hour Candle Data");
+                        break;
+                }
+                
+                candleDataStr.AppendLine(data.Quotes.ToReadableString());
+                candleDataStr.AppendLine();
+                
+                candleDataStr.AppendLine("### Bollinger Bands");
+                candleDataStr.AppendLine(this.GetBollingerBand(data.Quotes));
+                
+                candleDataStr.AppendLine("### RSI");
+                candleDataStr.AppendLine(this.GetRsi(data.Quotes));
+                
+                candleDataStr.AppendLine("### MACD");
+                candleDataStr.AppendLine(this.GetMacd(data.Quotes));
+                
+                candleDataStr.AppendLine("### OBV");
+                candleDataStr.AppendLine(this.GetObv(data.Quotes));
+                candleDataStr.AppendLine();
+            }
 
             prompt = prompt
                 .Replace("{ticker}", marketData.Ticker)
-                .Replace("{chart_type}", marketData.QuoteType.ToString())
-                .Replace("{candle_data}", marketData.Quotes.ToReadableString())
-                .Replace("{bollinger_band}", this.GetBollingerBand(marketData.Quotes))
-                .Replace("{rsi}", this.GetRsi(marketData.Quotes))
-                .Replace("{macd}", this.GetMacd(marketData.Quotes))
-                .Replace("{obv}", this.GetObv(marketData.Quotes));
+                .Replace("{candle_data}", candleDataStr.ToString());
 
             var message = new TextMessage(Role.User, prompt);
             var reply = await this._agent.GenerateReplyAsync(

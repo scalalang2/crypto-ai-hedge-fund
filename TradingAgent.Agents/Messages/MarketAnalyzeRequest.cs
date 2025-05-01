@@ -6,6 +6,7 @@ public enum QuoteType
 {
     None,
     DayCandle,
+    FourHourCandle,
     HourCandle,
 }
 
@@ -13,6 +14,11 @@ public class MarketData
 {
     public string Ticker { get; set; } = string.Empty;
     
+    public List<MarketCandle> CandleData { get; set; } = [];
+}
+
+public class MarketCandle
+{
     public QuoteType QuoteType { get; set; } = QuoteType.None;
     
     public List<Quote> Quotes { get; set; } = [];
