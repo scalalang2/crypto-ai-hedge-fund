@@ -44,10 +44,7 @@ public class SummarizerAgent : BaseAgent,
     public async ValueTask HandleAsync(SummaryRequest item, MessageContext messageContext)
     {
         var prompt = $"""
-Please summarize the following text in a clear manner.
-
-Rules:
-You need to speak in Korean.
+Please translate the given message into Korean.
 
 Please use the following format:
 **{messageContext.Sender!.Value.Type}**
