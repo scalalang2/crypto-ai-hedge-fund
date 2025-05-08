@@ -4,7 +4,7 @@
 # Crypto AI Hedge Fund
 [microsoft/AutoGen](https://github.com/microsoft/autogen)을 공부할 겸 시작한 실험용 프로젝트입니다.
 
-[TradingAgents: Multi-Agents LLM Financial Trading Framework (AAAI'25)](https://openreview.net/attachment?id=4QPrXwMQt1&name=pdf) 논문과 [ai-hedge-fund](https://github.com/virattt/ai-hedge-fund) 프로젝트룰 참고하여 암호화폐 버전으로 암호화폐 트레이딩 멀티-에이전트 LLM을 만들고 있습니다.
+[TradingAgents: Multi-Agents LLM Financial Trading Framework (AAAI'25)](https://openreview.net/attachment?id=4QPrXwMQt1&name=pdf) 논문과 [ai-hedge-fund](https://github.com/virattt/ai-hedge-fund) 프로젝트룰 참고하여 암호화폐 트레이딩 멀티-에이전트 LLM을 만들고 있습니다.
 
 ![screenshot](https://github.com/user-attachments/assets/239a2abe-8643-4cc3-aa60-801226cc8719)
 
