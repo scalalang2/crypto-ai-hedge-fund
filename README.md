@@ -8,7 +8,7 @@ This is a research project for creating a multi-agent LLM for cryptocurrency tra
 \inspired by [ai-hedge-fund](https://github.com/virattt/ai-hedge-fund) project and the research paper: [TradingAgents: Multi-Agents LLM Financial Trading Framework (AAAI'25)](https://openreview.net/attachment?id=4QPrXwMQt1&name=pdf).
 
 # Team Structure
-![team_structure](https://github.com/user-attachments/assets/ac38c3de-5580-49aa-85a4-f6640f7ca6b6)
+![Team_Structure](https://github.com/user-attachments/assets/ff6bf7b5-353d-482e-a968-5d12db259db3)
 
 # Installation
 ## Prerequisites
