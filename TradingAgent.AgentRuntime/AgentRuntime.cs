@@ -28,7 +28,6 @@ public class AgentRuntime(
         
         var appBuilder = new AgentsAppBuilder();
         appBuilder.Services.AddSingleton(options.Value);
-        appBuilder.Services.AddSingleton<FunctionTools>();
         appBuilder.Services.AddSingleton<IUpbitClient>(upbitClient);
         appBuilder.Services.AddSingleton(_client);
         appBuilder.Services.AddSingleton<IMessageSender, MessageSender>();
