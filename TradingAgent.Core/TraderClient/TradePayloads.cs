@@ -2,7 +2,7 @@
 
 using Json.Schema.Generation;
 
-namespace TradingAgent.Agents.Tools;
+namespace TradingAgent.Core.TraderClient;
 
 public class DayCandles
 {
@@ -16,8 +16,6 @@ public class DayCandles
 
         [Description("Candle reference time (KST) - Format: yyyy-MM-dd'T'HH:mm:ss")]
         public DateTime candle_date_time_kst { get; set; }
-        
-        
 
         [Description("Opening price")]
         public double opening_price { get; set; }
@@ -503,13 +501,13 @@ public class PlaceOrder
             var amount = string.IsNullOrEmpty(price) ? volume : price;
             
             return $"""
-side is a string that indicates the type of order (bid means `buy`/ask means `sell`)
-amount is a string that indicates the amount of order
+                    side is a string that indicates the type of order (bid means `buy`/ask means `sell`)
+                    amount is a string that indicates the amount of order
 
-market : {market}
-side : {side}
-amount : {amount}
-""";
+                    market : {market}
+                    side : {side}
+                    amount : {amount}
+                    """;
         }
     }
 }

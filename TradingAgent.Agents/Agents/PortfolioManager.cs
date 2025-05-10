@@ -15,9 +15,11 @@ using Skender.Stock.Indicators;
 using TradingAgent.Agents.Extensions;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Services;
-using TradingAgent.Agents.Tools;
 using TradingAgent.Agents.Utils;
 using TradingAgent.Core.Config;
+using TradingAgent.Core.TraderClient;
+using Candles = TradingAgent.Core.TraderClient.Candles;
+using DayCandles = TradingAgent.Core.TraderClient.DayCandles;
 using IAgent = AutoGen.Core.IAgent;
 
 namespace TradingAgent.Agents.Agents;
@@ -31,7 +33,7 @@ public class PortfolioManager : BaseAgent,
     IHandle<MarketAnalyzeResponse>
 {
     private readonly AppConfig config;
-    private readonly IUpbitClient _upbitClient;
+    private readonly ITraderClient _upbitClient;
     private readonly ITradingHistoryService _tradingHistoryService;
     private readonly AutoGen.Core.IAgent _agent;
  
@@ -98,7 +100,7 @@ Output strictly in the following format:
         IAgentRuntime runtime, 
         ILogger<BaseAgent> logger, 
         AppConfig config, 
-        IUpbitClient upbitClient, ITradingHistoryService tradingHistoryService) : base(id, runtime, "portfoliomanager", logger)
+        ITraderClient upbitClient, ITradingHistoryService tradingHistoryService) : base(id, runtime, "portfoliomanager", logger)
     {
         this.config = config;
         this._upbitClient = upbitClient;

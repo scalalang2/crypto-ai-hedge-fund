@@ -1,8 +1,6 @@
-using System.Text;
 using ConsoleTables;
 using Skender.Stock.Indicators;
 using TradingAgent.Agents.Messages;
-using TradingAgent.Agents.Tools;
 
 namespace TradingAgent.Agents.Extensions;
 

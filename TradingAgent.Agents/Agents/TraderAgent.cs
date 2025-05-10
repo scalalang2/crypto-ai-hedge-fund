@@ -3,9 +3,11 @@ using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Services;
-using TradingAgent.Agents.Tools;
 using TradingAgent.Agents.Utils;
 using TradingAgent.Core.Config;
+using TradingAgent.Core.TraderClient;
+using Chance = TradingAgent.Core.TraderClient.Chance;
+using PlaceOrder = TradingAgent.Core.TraderClient.PlaceOrder;
 
 namespace TradingAgent.Agents.Agents;
 
@@ -17,7 +19,7 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
 {
     private readonly AppConfig config;
     private readonly Dictionary<string, Func<string, Task<string>>> traderFunctionMap;
-    private readonly IUpbitClient _upbitClient;
+    private readonly ITraderClient _upbitClient;
     private readonly IMessageSender _messageSender;
     private readonly ITradingHistoryService _tradingHistoryService;
 
@@ -26,7 +28,7 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
         IAgentRuntime runtime, 
         ILogger<BaseAgent> logger, 
         AppConfig config, 
-        IUpbitClient upbitClient, 
+        ITraderClient upbitClient, 
         IMessageSender messageSender, 
         ITradingHistoryService tradingHistoryService) : base(id, runtime, "trader", logger)
     {

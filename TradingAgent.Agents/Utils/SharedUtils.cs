@@ -1,7 +1,9 @@
 using System.Text;
 using ConsoleTables;
 using TradingAgent.Agents.Services;
-using TradingAgent.Agents.Tools;
+using TradingAgent.Core.TraderClient;
+using Chance = TradingAgent.Core.TraderClient.Chance;
+using Ticker = TradingAgent.Core.TraderClient.Ticker;
 
 namespace TradingAgent.Agents.Utils;
 
@@ -28,7 +30,7 @@ public static class SharedUtils
         return table.ToMinimalString();
     }
     
-    public static async Task<string> GetCurrentPositionPrompt(IUpbitClient upbitClient, List<string> availableMarket, List<Ticker> tickerResponse)
+    public static async Task<string> GetCurrentPositionPrompt(ITraderClient upbitClient, List<string> availableMarket, List<Ticker> tickerResponse)
     {
         var table = new ConsoleTable("Market", "Amount", "Average Buying Price", "Current Price");
         var totalKrw = 0d;

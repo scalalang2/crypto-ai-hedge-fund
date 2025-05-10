@@ -13,7 +13,6 @@ using OpenAI;
 using Skender.Stock.Indicators;
 using TradingAgent.Agents.Extensions;
 using TradingAgent.Agents.Messages;
-using TradingAgent.Agents.Tools;
 using TradingAgent.Core.Config;
 
 namespace TradingAgent.Agents.Agents;

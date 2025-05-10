@@ -6,12 +6,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using TradingAgent.Agents;
 using TradingAgent.Agents.Agents;
 using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Services;
-using TradingAgent.Agents.Tools;
 using TradingAgent.Core.Config;
+using TradingAgent.Core.TraderClient;
+using TradingAgent.Core.TraderClient.Upbit;
 
 namespace TradingAgent.AgentRuntime;
 
@@ -28,7 +28,7 @@ public class AgentRuntime(
         
         var appBuilder = new AgentsAppBuilder();
         appBuilder.Services.AddSingleton(options.Value);
-        appBuilder.Services.AddSingleton<IUpbitClient>(upbitClient);
+        appBuilder.Services.AddSingleton<ITraderClient>(upbitClient);
         appBuilder.Services.AddSingleton(_client);
         appBuilder.Services.AddSingleton<IMessageSender, MessageSender>();
         appBuilder.Services.AddSingleton<ITradingHistoryService, TradingHistoryService>();

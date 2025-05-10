@@ -8,12 +8,12 @@ using JWT.Serializers;
 using Newtonsoft.Json;
 using RestSharp;
 
-namespace TradingAgent.Agents.Tools;
+namespace TradingAgent.Core.TraderClient.Upbit;
 
 /// <summary>
 /// Copied from https://github.com/airtaxi/.NET-UPbit-Api/blob/master/UPbit%20Api/Upbit.cs
 /// </summary>
-public class UpbitClient : IUpbitClient
+public class UpbitClient : ITraderClient
 {
     private readonly string _accessKey;
     private readonly string _secretKey;
