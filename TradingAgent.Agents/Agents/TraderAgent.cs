@@ -25,7 +25,6 @@ public class TraderAgent : BaseAgent, IHandle<FinalDecisionMessage>
         AgentId id, 
         IAgentRuntime runtime, 
         ILogger<BaseAgent> logger, 
-        FunctionTools tools,
         AppConfig config, 
         IUpbitClient upbitClient, 
         IMessageSender messageSender, 
