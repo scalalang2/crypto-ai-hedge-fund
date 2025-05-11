@@ -26,7 +26,7 @@ public class TraderAgent :
     {
         this._config = config;
             
-        var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.WorkerAIModel);
+        var client = new OpenAIClient(config.FastAIModel).GetChatClient(config.FastAIModel);
         this._agent = new OpenAIChatAgent(
                 chatClient: client, 
                 name: AgentName, 

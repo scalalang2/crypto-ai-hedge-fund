@@ -20,7 +20,7 @@ public class MessageSender : IMessageSender
 
     public async Task SendMessage(string message)
     {
-        var channel = await this._discordSocketClient.GetChannelAsync(this.config.DiscordChannelId) as SocketTextChannel;
+        var channel = await this._discordSocketClient.GetChannelAsync(this.config.Discord.ChannelId) as SocketTextChannel;
         if (channel != null)
         {
             await channel.SendMessageAsync(message);

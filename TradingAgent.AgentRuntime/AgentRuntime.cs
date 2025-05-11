@@ -27,7 +27,7 @@ public class AgentRuntime(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var upbitClient = new UpbitClient(options.Value.UpbitAccessKey, options.Value.UpbitSecretKey);
+        var upbitClient = new UpbitClient(options.Value.Upbit.AccessKey, options.Value.Upbit.SecretKey);
         
         var appBuilder = new AgentsAppBuilder();
         appBuilder.Services.AddSingleton(options.Value);
@@ -45,7 +45,7 @@ public class AgentRuntime(
         var agentApp = await appBuilder.BuildAsync();
         await agentApp.StartAsync();
         
-        await _client.LoginAsync(TokenType.Bot, options.Value.DiscordBotToken);
+        await _client.LoginAsync(TokenType.Bot, options.Value.Discord.BotToken);
         _client.Log += LogAsync;
         _client.MessageReceived += MessageReceivedAsync;
         await _client.StartAsync();

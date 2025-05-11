@@ -3,31 +3,29 @@ using System.ComponentModel.DataAnnotations;
 namespace TradingAgent.Core.Config;
 
 /// <summary>
-/// 트레이딩 애플리케이션의 설정값 정의
+/// Overall configuration for this application
 /// </summary>
 public class AppConfig
 {
+    /// <summary>
+    /// List of markets you want to trade in.
+    /// </summary>
     [Required]
-    public List<string> AvailableMarkets { get; set; } = [];
+    public List<string> Markets { get; set; } = [];
     
+    /// <summary>
+    /// e.g. gpt-4.1
+    /// </summary>
     [Required]
-    public string OpenAIApiKey { get; set; }
+    public string SmartAIModel { get; set; }
     
+    /// <summary>
+    /// e.g. gpt-4.1-mini
+    /// </summary>
     [Required]
-    public string LeaderAIModel { get; set; }
+    public string FastAIModel { get; set; }
     
-    [Required]
-    public string WorkerAIModel { get; set; }
+    public UpbitConfig Upbit { get; set; } = new();
     
-    [Required]
-    public string UpbitAccessKey { get; set; }
-    
-    [Required]
-    public string UpbitSecretKey { get; set; }
-    
-    [Required]
-    public string DiscordBotToken { get; set; }
-    
-    [Required]
-    public ulong DiscordChannelId { get; set; }
+    public DiscordConfig Discord { get; set; } = new();
 }
