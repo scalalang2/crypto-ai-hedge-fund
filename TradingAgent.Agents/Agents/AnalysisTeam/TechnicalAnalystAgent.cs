@@ -15,6 +15,8 @@ public class TechnicalAnalystAgent :
     BaseAgent,
     IHandle<StartAnalysisRequest>
 {
+    private const string AgentName = "Technical Analyst Agent";
+    
     private readonly AppConfig _config;
     private readonly AutoGen.Core.IAgent _agent;
     
@@ -22,14 +24,14 @@ public class TechnicalAnalystAgent :
         AgentId id, 
         IAgentRuntime runtime, 
         ILogger<BaseAgent> logger, 
-        AppConfig config) : base(id, runtime, "Technical Analyst", logger)
+        AppConfig config) : base(id, runtime, AgentName, logger)
     {
         this._config = config;
         
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.WorkerAIModel);
         this._agent = new OpenAIChatAgent(
                 chatClient: client, 
-                name: "Techincal Analyst Agent", 
+                name: AgentName, 
                 systemMessage: "")
             .RegisterMessageConnector()
             .RegisterPrintMessage();

@@ -6,16 +6,6 @@ namespace TradingAgent.Agents.Extensions;
 
 public static class HumanReadableExtensions
 {
-    public static string ToReadableString(this QuoteType quoteType) {
-        return quoteType switch
-        {
-            QuoteType.None => "None",
-            QuoteType.DayCandle => "Day Candle",
-            QuoteType.HourCandle => "Hour Candle",
-            _ => "Unknown"
-        };
-    }
-    
     public static string ToReadableString(this List<Quote> candles)
     {
         var table = new ConsoleTable("Date", "Open Price", "Close Price", "High Price", "Low Price", "Volume");

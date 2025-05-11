@@ -7,7 +7,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TradingAgent.Agents.Agents;
+using TradingAgent.Agents.Agents.AnalysisTeam;
+using TradingAgent.Agents.Agents.TradingTeam;
 using TradingAgent.Agents.Messages;
+using TradingAgent.Agents.Messages.AnalysisTeam;
 using TradingAgent.Agents.Services;
 using TradingAgent.Core.Config;
 using TradingAgent.Core.TraderClient;
@@ -35,14 +38,9 @@ public class AgentRuntime(
         appBuilder.Services.AddLogging(builder => builder.AddConsole());
 
         appBuilder.UseInProcessRuntime(deliverToSelf: true)
-            .AddAgent<PortfolioManager>(nameof(PortfolioManager))
             .AddAgent<TechnicalAnalystAgent>(nameof(TechnicalAnalystAgent))
-            .AddAgent<HosodaGoichiAgent>(nameof(HosodaGoichiAgent))
-            .AddAgent<GeorgeLaneAgent>(nameof(GeorgeLaneAgent))
-            .AddAgent<CriticAgent>(nameof(CriticAgent))
             .AddAgent<TraderAgent>(nameof(TraderAgent))
-            .AddAgent<RiskManagerAgent>(nameof(RiskManagerAgent))
-            .AddAgent<SummarizerAgent>(nameof(SummarizerAgent));
+            .AddAgent<RiskManagerAgent>(nameof(RiskManagerAgent));
         
         var agentApp = await appBuilder.BuildAsync();
         await agentApp.StartAsync();
@@ -52,8 +50,8 @@ public class AgentRuntime(
         _client.MessageReceived += MessageReceivedAsync;
         await _client.StartAsync();
         
-        var message = new InitMessage { };
-        await agentApp.PublishMessageAsync(message, new TopicId(nameof(PortfolioManager)), cancellationToken: cancellationToken).ConfigureAwait(false);
+        var message = new StartAnalysisRequest() { };
+        await agentApp.PublishMessageAsync(message, new TopicId(nameof(TechnicalAnalystAgent)), cancellationToken: cancellationToken).ConfigureAwait(false);
         System.Environment.Exit(0);
     }
 
