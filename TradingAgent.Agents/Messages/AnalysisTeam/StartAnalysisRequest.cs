@@ -1,3 +1,5 @@
+using TradingAgent.Agents.Messages.Shared;
+
 namespace TradingAgent.Agents.Messages.AnalysisTeam;
 
 /// <summary>
@@ -5,13 +7,5 @@ namespace TradingAgent.Agents.Messages.AnalysisTeam;
 /// </summary>
 public class StartAnalysisRequest
 {
-    /// <summary>
-    /// The ticker symbol of the asset (e.g., "KRW-BTC").
-    /// </summary>
-    public string Ticker { get; set; } = string.Empty;
-
-    /// <summary>
-    /// The full name of the asset. (e.g. "Bitcoin")
-    /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public MarketContext MarketContext { get; set; } = new MarketContext();
 }

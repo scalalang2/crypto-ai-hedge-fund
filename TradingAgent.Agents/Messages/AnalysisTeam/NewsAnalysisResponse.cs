@@ -1,4 +1,5 @@
 using Json.Schema.Generation;
+using TradingAgent.Agents.Messages.Shared;
 
 namespace TradingAgent.Agents.Messages.AnalysisTeam;
 
@@ -7,6 +8,8 @@ public class NewsAnalysisResponse
 {
     [Description("The list of news analysis results.")]
     public List<NewsAnalysisResult> NewsAnalysisResult { get; set; } = [];
+    
+    public MarketContext MarketContext { get; set; } = new MarketContext();
 }
 
 [Title("news-analysis-result")]
@@ -26,7 +29,4 @@ public class NewsAnalysisResult
     
     [Description("The timestamp of the news article.")]
     public DateTime Timestamp { get; set; }
-    
-    [Description("The list of related crypto assets mentioned in the news article.")]
-    public List<string> RelatedAssets { get; set; } = [];
 }

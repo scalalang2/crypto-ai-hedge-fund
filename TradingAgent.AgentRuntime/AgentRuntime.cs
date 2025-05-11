@@ -51,7 +51,7 @@ public class AgentRuntime(
         await _client.StartAsync();
         
         var message = new StartAnalysisRequest() { };
-        await agentApp.PublishMessageAsync(message, new TopicId(nameof(TechnicalAnalystAgent)), cancellationToken: cancellationToken).ConfigureAwait(false);
+        await agentApp.PublishMessageAsync(message, new TopicId(nameof(TechnicalAnalystAgent)), cancellationToken: cancellationToken);
         System.Environment.Exit(0);
     }
 

@@ -1,4 +1,5 @@
 using Json.Schema.Generation;
+using TradingAgent.Agents.Messages.Shared;
 
 namespace TradingAgent.Agents.Messages.AnalysisTeam;
 
@@ -13,16 +14,6 @@ public class TechnicalAnalysisResult
     
     [Description("Confidence is a number between 0 and 100, where 100 means you are very confident in your analysis")]
     public double Confidence { get; set; } = 0.0;
-    
-    /// <summary>
-    /// Ticker is the ticker symbol of the asset to be traded
-    /// </summary>
-    public string Ticker { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// The full name of the asset. (e.g. "Bitcoin", "Ethereum", "Solana" and etc.)
-    /// </summary>
-    public string AssetFullName { get; set; } = string.Empty;
 }
 
 public class TechnicalAnalysisResponse
@@ -30,5 +21,5 @@ public class TechnicalAnalysisResponse
     /// <summary>
     /// The list of technical analysis results
     /// </summary>
-    public List<TechnicalAnalysisResult> TechnicalAnalysisResults { get; set; } = [];
+    public List<(MarketContext MarketContext, TechnicalAnalysisResult AnalysisResult)> TechnicalAnalysisResults { get; set; } = [];
 }
