@@ -11,7 +11,13 @@ public class AppConfig
     /// List of markets you want to trade in.
     /// </summary>
     [Required]
-    public List<string> Markets { get; set; } = [];
+    public List<MarketContext> Markets { get; set; } = [];
+    
+    /// <summary>
+    /// Open AI API key for the application.
+    /// </summary>
+    [Required]
+    public string OpenAIApiKey { get; set; } = string.Empty;
     
     /// <summary>
     /// e.g. gpt-4.1

@@ -10,6 +10,7 @@ using TradingAgent.Core.Config;
 
 namespace TradingAgent.Agents.Agents.TradingTeam;
 
+[TypeSubscription(nameof(TraderAgent))]
 public class TraderAgent :
     BaseAgent
 {
@@ -26,7 +27,7 @@ public class TraderAgent :
     {
         this._config = config;
             
-        var client = new OpenAIClient(config.FastAIModel).GetChatClient(config.FastAIModel);
+        var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.FastAIModel);
         this._agent = new OpenAIChatAgent(
                 chatClient: client, 
                 name: AgentName, 

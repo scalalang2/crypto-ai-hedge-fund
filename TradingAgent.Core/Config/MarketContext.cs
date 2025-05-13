@@ -1,6 +1,4 @@
-using Json.Schema.Generation;
-
-namespace TradingAgent.Agents.Messages.Shared;
+namespace TradingAgent.Core.Config;
 
 public class MarketContext
 {

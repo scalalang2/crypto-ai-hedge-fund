@@ -1,5 +1,5 @@
 using Json.Schema.Generation;
-using TradingAgent.Agents.Messages.Shared;
+using TradingAgent.Core.Config;
 
 namespace TradingAgent.Agents.Messages.AnalysisTeam;
 

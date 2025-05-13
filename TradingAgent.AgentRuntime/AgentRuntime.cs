@@ -8,8 +8,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TradingAgent.Agents.Agents;
 using TradingAgent.Agents.Agents.AnalysisTeam;
+using TradingAgent.Agents.Agents.ResearchTeam;
 using TradingAgent.Agents.Agents.TradingTeam;
-using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Messages.AnalysisTeam;
 using TradingAgent.Agents.Services;
 using TradingAgent.Core.Config;
@@ -38,7 +38,11 @@ public class AgentRuntime(
         appBuilder.Services.AddLogging(builder => builder.AddConsole());
 
         appBuilder.UseInProcessRuntime(deliverToSelf: true)
+            .AddAgent<GateKeeperAgent>(nameof(GateKeeperAgent))
+            .AddAgent<NewsAnalystAgent>(nameof(NewsAnalystAgent))
+            .AddAgent<SentimentAnalystAgent>(nameof(SentimentAnalystAgent))
             .AddAgent<TechnicalAnalystAgent>(nameof(TechnicalAnalystAgent))
+            .AddAgent<ResearchTeamAgent>(nameof(ResearchTeamAgent))
             .AddAgent<TraderAgent>(nameof(TraderAgent))
             .AddAgent<RiskManagerAgent>(nameof(RiskManagerAgent));
         
@@ -50,8 +54,15 @@ public class AgentRuntime(
         _client.MessageReceived += MessageReceivedAsync;
         await _client.StartAsync();
         
-        var message = new StartAnalysisRequest() { };
-        await agentApp.PublishMessageAsync(message, new TopicId(nameof(TechnicalAnalystAgent)), cancellationToken: cancellationToken);
+        var message = new StartAnalysisRequest
+        {
+            MarketContext = new MarketContext
+            {
+                Ticker = null,
+                Name = null,
+            }
+        };
+        await agentApp.PublishMessageAsync(message, new TopicId(nameof(GateKeeperAgent)), cancellationToken: cancellationToken);
         System.Environment.Exit(0);
     }
 

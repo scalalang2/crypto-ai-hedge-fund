@@ -28,7 +28,7 @@ public class TechnicalAnalystAgent :
     {
         this._config = config;
         
-        var client = new OpenAIClient(config.FastAIModel).GetChatClient(config.FastAIModel);
+        var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.FastAIModel);
         this._agent = new OpenAIChatAgent(
                 chatClient: client, 
                 name: AgentName, 

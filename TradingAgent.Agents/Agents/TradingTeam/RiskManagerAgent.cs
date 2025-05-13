@@ -9,6 +9,7 @@ using TradingAgent.Core.Config;
 
 namespace TradingAgent.Agents.Agents.TradingTeam;
 
+[TypeSubscription(nameof(RiskManagerAgent))]
 public class RiskManagerAgent :
     BaseAgent
 {
@@ -25,7 +26,7 @@ public class RiskManagerAgent :
     {
         this._config = config;
             
-        var client = new OpenAIClient(config.FastAIModel).GetChatClient(config.FastAIModel);
+        var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.FastAIModel);
         this._agent = new OpenAIChatAgent(
                 chatClient: client, 
                 name: AgentName, 

@@ -9,6 +9,7 @@ using TradingAgent.Core.Config;
 
 namespace TradingAgent.Agents.Agents.AnalysisTeam;
 
+[TypeSubscription(nameof(NewsAnalystAgent))]
 public class NewsAnalystAgent :
     BaseAgent
 {
@@ -25,7 +26,7 @@ public class NewsAnalystAgent :
     {
         this._config = config;
             
-        var client = new OpenAIClient(config.FastAIModel).GetChatClient(config.FastAIModel);
+        var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.FastAIModel);
         this._agent = new OpenAIChatAgent(
                 chatClient: client, 
                 name: AgentName, 
