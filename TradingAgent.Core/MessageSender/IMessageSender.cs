@@ -1,4 +1,4 @@
-namespace TradingAgent.Agents.Services;
+namespace TradingAgent.Core.MessageSender;
 
 public interface IMessageSender
 {

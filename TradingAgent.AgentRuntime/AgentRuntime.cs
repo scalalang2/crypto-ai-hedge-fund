@@ -13,6 +13,7 @@ using TradingAgent.Agents.Agents.TradingTeam;
 using TradingAgent.Agents.Messages.AnalysisTeam;
 using TradingAgent.Agents.Services;
 using TradingAgent.Core.Config;
+using TradingAgent.Core.MessageSender;
 using TradingAgent.Core.TraderClient;
 using TradingAgent.Core.TraderClient.Upbit;
 
@@ -31,7 +32,7 @@ public class AgentRuntime(
         
         var appBuilder = new AgentsAppBuilder();
         appBuilder.Services.AddSingleton(options.Value);
-        appBuilder.Services.AddSingleton<ITraderClient>(upbitClient);
+        appBuilder.Services.AddSingleton<IUpbitClient>(upbitClient);
         appBuilder.Services.AddSingleton(_client);
         appBuilder.Services.AddSingleton<IMessageSender, MessageSender>();
         appBuilder.Services.AddSingleton<ITradingHistoryService, TradingHistoryService>();
@@ -53,16 +54,21 @@ public class AgentRuntime(
         _client.Log += LogAsync;
         _client.MessageReceived += MessageReceivedAsync;
         await _client.StartAsync();
-        
-        var message = new StartAnalysisRequest
+
+
+        foreach (var marketContext in options.Value.Markets)
         {
-            MarketContext = new MarketContext
+            var message = new StartAnalysisRequest
             {
-                Ticker = null,
-                Name = null,
-            }
-        };
-        await agentApp.PublishMessageAsync(message, new TopicId(nameof(GateKeeperAgent)), cancellationToken: cancellationToken);
+                MarketContext = new MarketContext
+                {
+                    Ticker = marketContext.Ticker,
+                    Name = marketContext.Name,
+                }
+            };
+            await agentApp.PublishMessageAsync(message, new TopicId(nameof(GateKeeperAgent)), cancellationToken: cancellationToken);
+        }
+        
         System.Environment.Exit(0);
     }
 

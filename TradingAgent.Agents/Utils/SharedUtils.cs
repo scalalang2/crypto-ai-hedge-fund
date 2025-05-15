@@ -30,7 +30,7 @@ public static class SharedUtils
         return table.ToMinimalString();
     }
     
-    public static async Task<string> GetCurrentPositionPrompt(ITraderClient upbitClient, List<string> availableMarket, List<Ticker> tickerResponse)
+    public static async Task<string> GetCurrentPositionPrompt(IUpbitClient upbitClient, List<string> availableMarket, List<Ticker> tickerResponse)
     {
         var table = new ConsoleTable("Market", "Amount", "Average Buying Price", "Current Price");
         var totalKrw = 0d;

@@ -5,13 +5,16 @@ using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using OpenAI;
+using TradingAgent.Agents.Agents.ResearchTeam;
+using TradingAgent.Agents.Messages.AnalysisTeam;
 using TradingAgent.Core.Config;
 
 namespace TradingAgent.Agents.Agents.AnalysisTeam;
 
 [TypeSubscription(nameof(SentimentAnalystAgent))]
 public class SentimentAnalystAgent :
-    BaseAgent
+    BaseAgent,
+    IHandle<StartAnalysisRequest>
 {
     private const string AgentName = "Sentiment Analyst Agent";
     
@@ -33,5 +36,11 @@ public class SentimentAnalystAgent :
                 systemMessage: "")
             .RegisterMessageConnector()
             .RegisterPrintMessage();
+    }
+
+    public async ValueTask HandleAsync(StartAnalysisRequest item, MessageContext messageContext)
+    {
+        var response = new SentimentAnalysisResponse();
+        await this.PublishMessageAsync(response, new TopicId(nameof(ResearchTeamAgent)));
     }
 }

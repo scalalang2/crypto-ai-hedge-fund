@@ -5,6 +5,7 @@ using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using OpenAI;
+using TradingAgent.Agents.Agents.AnalysisTeam;
 using TradingAgent.Agents.Messages.AnalysisTeam;
 using TradingAgent.Core.Config;
 
@@ -16,9 +17,7 @@ public class GateKeeperAgent :
     IHandle<StartAnalysisRequest>
 {
     private const string AgentName = "GateKeeper Agent";
-    
     private readonly AppConfig _config;
-    private readonly AutoGen.Core.IAgent _agent;
         
     public GateKeeperAgent(
         AgentId id, 
@@ -27,18 +26,12 @@ public class GateKeeperAgent :
         AppConfig config) : base(id, runtime, AgentName, logger)
     {
         this._config = config;
-        
-        var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.FastAIModel);
-        this._agent = new OpenAIChatAgent(
-                chatClient: client, 
-                name: AgentName, 
-                systemMessage: "")
-            .RegisterMessageConnector()
-            .RegisterPrintMessage();
     }
 
-    public ValueTask HandleAsync(StartAnalysisRequest item, MessageContext messageContext)
+    public async ValueTask HandleAsync(StartAnalysisRequest item, MessageContext messageContext)
     {
-        throw new NotImplementedException();
+        await this.PublishMessageAsync(item, new TopicId(nameof(NewsAnalystAgent)));
+        await this.PublishMessageAsync(item, new TopicId(nameof(SentimentAnalystAgent)));
+        await this.PublishMessageAsync(item, new TopicId(nameof(TechnicalAnalystAgent)));
     }
 }

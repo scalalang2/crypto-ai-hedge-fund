@@ -6,18 +6,23 @@ using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using OpenAI;
 using TradingAgent.Agents.Messages.AnalysisTeam;
+using TradingAgent.Agents.Messages.ResearchTeam;
+using TradingAgent.Agents.Messages.TradingTeam;
 using TradingAgent.Core.Config;
 
 namespace TradingAgent.Agents.Agents.TradingTeam;
 
 [TypeSubscription(nameof(TraderAgent))]
 public class TraderAgent :
-    BaseAgent
+    BaseAgent,
+    IHandle<AdjustedTransactionMessage>,
+    IHandle<ResearchResultResponse>
 {
     private const string AgentName = "Trader Agent";
     
     private readonly AppConfig _config;
     private readonly AutoGen.Core.IAgent _agent;
+    private readonly Dictionary<string, ResearchResultResponse> _researchResult = new();
         
     public TraderAgent(
         AgentId id, 
@@ -34,5 +39,31 @@ public class TraderAgent :
                 systemMessage: "")
             .RegisterMessageConnector()
             .RegisterPrintMessage();
+    }
+
+    public ValueTask HandleAsync(AdjustedTransactionMessage item, MessageContext messageContext)
+    {
+        // start trading with adjusted transactions
+
+        return ValueTask.CompletedTask;
+    }
+
+    public async ValueTask HandleAsync(ResearchResultResponse item, MessageContext messageContext)
+    {
+        this._researchResult[item.MarketContext.Ticker] = item;
+        await this.TryProposeTrade();
+    }
+
+    private async Task TryProposeTrade()
+    {
+        // ensure that all research results are received
+        if (this._config.Markets.Any(market => !this._researchResult.ContainsKey(market.Ticker)))
+        {
+            return;
+        }
+        
+        // make a proposal and send to the risk manager
+        var response = new ProposeTransactionMessage();
+        await this.PublishMessageAsync(response, new TopicId(nameof(RiskManagerAgent)));
     }
 }

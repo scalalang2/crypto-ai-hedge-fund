@@ -4,7 +4,7 @@ namespace TradingAgent.Core.TraderClient;
 /// ITraderClient is an interface for a client that interacts with a trading platform.
 /// (e.g. Upbit, Binance, etc..)
 /// </summary>
-public interface ITraderClient
+public interface IUpbitClient
 {
     public Task<Chance.Response> GetChance(Chance.Request args);
     

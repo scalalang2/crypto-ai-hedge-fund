@@ -5,6 +5,7 @@ using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using OpenAI;
+using TradingAgent.Agents.Agents.ResearchTeam;
 using TradingAgent.Agents.Messages.AnalysisTeam;
 using TradingAgent.Core.Config;
 
@@ -37,8 +38,9 @@ public class TechnicalAnalystAgent :
             .RegisterPrintMessage();
     }
 
-    public ValueTask HandleAsync(StartAnalysisRequest item, MessageContext messageContext)
+    public async ValueTask HandleAsync(StartAnalysisRequest item, MessageContext messageContext)
     {
-        throw new NotImplementedException();
+        var response = new TechnicalAnalysisResponse();
+        await this.PublishMessageAsync(response, new TopicId(nameof(ResearchTeamAgent)));
     }
 }

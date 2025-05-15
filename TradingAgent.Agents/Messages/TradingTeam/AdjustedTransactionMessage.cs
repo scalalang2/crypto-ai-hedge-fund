@@ -15,9 +15,6 @@ public class AdjustedTransactionMessage
 [Title("adjusted-transaction-proposal")]
 public class AdjustedTransactionProposal
 {
-    [Description("The original transaction proposal before adjustment.")]
-    public TransactionProposal OriginalProposal { get; set; } = new();
-
     [Description("The adjusted transaction proposal after risk management review. This may differ from the original in action, quantity, or confidence.")]
     public TransactionProposal AdjustedProposal { get; set; } = new();
 

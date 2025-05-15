@@ -2,7 +2,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using TradingAgent.Core.Config;
 
-namespace TradingAgent.Agents.Services;
+namespace TradingAgent.Core.MessageSender;
 
 public class MessageSender : IMessageSender
 {

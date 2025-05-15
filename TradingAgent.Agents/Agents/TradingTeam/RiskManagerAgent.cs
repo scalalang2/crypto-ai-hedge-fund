@@ -5,13 +5,15 @@ using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using OpenAI;
+using TradingAgent.Agents.Messages.TradingTeam;
 using TradingAgent.Core.Config;
 
 namespace TradingAgent.Agents.Agents.TradingTeam;
 
 [TypeSubscription(nameof(RiskManagerAgent))]
 public class RiskManagerAgent :
-    BaseAgent
+    BaseAgent,
+    IHandle<ProposeTransactionMessage>
 {
     private const string AgentName = "Rsik Manager Agent";
     
@@ -33,5 +35,13 @@ public class RiskManagerAgent :
                 systemMessage: "")
             .RegisterMessageConnector()
             .RegisterPrintMessage();
+    }
+
+    public async ValueTask HandleAsync(ProposeTransactionMessage item, MessageContext messageContext)
+    {
+        // given a proposal from the trader agent, check if the risk is acceptable
+
+        var response = new AdjustedTransactionProposal();
+        await this.PublishMessageAsync(response, new TopicId(nameof(TraderAgent)));
     }
 }

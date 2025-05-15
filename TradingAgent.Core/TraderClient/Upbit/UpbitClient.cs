@@ -13,7 +13,7 @@ namespace TradingAgent.Core.TraderClient.Upbit;
 /// <summary>
 /// Copied from https://github.com/airtaxi/.NET-UPbit-Api/blob/master/UPbit%20Api/Upbit.cs
 /// </summary>
-public class UpbitClient : ITraderClient
+public class UpbitClient : IUpbitClient
 {
     private readonly string _accessKey;
     private readonly string _secretKey;
