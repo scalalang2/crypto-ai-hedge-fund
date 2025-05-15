@@ -1,3 +1,5 @@
+using Skender.Stock.Indicators;
+
 namespace TradingAgent.Core.TraderClient;
 
 /// <summary>
@@ -12,7 +14,7 @@ public interface IUpbitClient
     
     public Task<List<Ticker>> GetTicker(string symbol);
     
-    public Task<List<DayCandles.Response>> GetDayCandles(DayCandles.Request args);
+    public Task<List<Quote>> GetDayCandles(DayCandles.Request args);
     
-    public Task<List<Candles.Response>> GetMinuteCandles(int unit, Candles.Request args);   
+    public Task<List<Quote>> GetMinuteCandles(int unit, Candles.Request args);   
 }

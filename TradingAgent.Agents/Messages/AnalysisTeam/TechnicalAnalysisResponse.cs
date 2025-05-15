@@ -18,8 +18,7 @@ public class TechnicalAnalysisResult
 
 public class TechnicalAnalysisResponse
 {
-    /// <summary>
-    /// The list of technical analysis results
-    /// </summary>
-    public List<(MarketContext MarketContext, TechnicalAnalysisResult AnalysisResult)> TechnicalAnalysisResults { get; set; } = [];
+    public MarketContext MarketContext { get; set; } = new();
+
+    public TechnicalAnalysisResult AnalysisResult { get; set; } = new();
 }

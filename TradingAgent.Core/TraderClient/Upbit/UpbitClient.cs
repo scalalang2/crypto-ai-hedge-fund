@@ -7,6 +7,8 @@ using JWT.Algorithms;
 using JWT.Serializers;
 using Newtonsoft.Json;
 using RestSharp;
+using Skender.Stock.Indicators;
+using TradingAgent.Core.Extensions;
 
 namespace TradingAgent.Core.TraderClient.Upbit;
 
@@ -240,10 +242,10 @@ public class UpbitClient : IUpbitClient
         return JsonConvert.DeserializeObject<List<MarketCodes>>(response.Content);
     }
     
-    public async Task<List<DayCandles.Response>> GetDayCandles(DayCandles.Request args)
+    public async Task<List<Quote>> GetDayCandles(DayCandles.Request args)
     {
         var response = await this.NonAuthApiCall("candles/days", GenerateApiCallArgs(args));
-        return JsonConvert.DeserializeObject<List<DayCandles.Response>>(response.Content);
+        return JsonConvert.DeserializeObject<List<DayCandles.Response>>(response.Content).ToQuote();
     }
     
     public async Task<List<Candles.Response>> GetWeekCandles(Candles.Request args)
@@ -258,10 +260,10 @@ public class UpbitClient : IUpbitClient
         return JsonConvert.DeserializeObject<List<Candles.Response>>(response.Content);
     }
     
-    public async Task<List<Candles.Response>> GetMinuteCandles(int unit, Candles.Request args)
+    public async Task<List<Quote>> GetMinuteCandles(int unit, Candles.Request args)
     {
         var response = await this.NonAuthApiCall($"candles/minutes/{unit}", GenerateApiCallArgs(args));
-        return JsonConvert.DeserializeObject<List<Candles.Response>>(response.Content);
+        return JsonConvert.DeserializeObject<List<Candles.Response>>(response.Content).ToQuote();
     }
     
     public async Task<List<OrderBook.Response>> GetOrderBooks(string symbol)

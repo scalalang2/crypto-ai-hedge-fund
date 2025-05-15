@@ -50,6 +50,7 @@ public class TraderAgent :
 
     public async ValueTask HandleAsync(ResearchResultResponse item, MessageContext messageContext)
     {
+        this._logger.LogInformation("[TraderAgent] {sender} {research_result}", messageContext.Sender, item);
         this._researchResult[item.MarketContext.Ticker] = item;
         await this.TryProposeTrade();
     }

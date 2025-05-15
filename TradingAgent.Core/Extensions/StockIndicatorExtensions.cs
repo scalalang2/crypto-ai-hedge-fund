@@ -1,8 +1,7 @@
 using Skender.Stock.Indicators;
-using Candles = TradingAgent.Core.TraderClient.Candles;
-using DayCandles = TradingAgent.Core.TraderClient.DayCandles;
+using TradingAgent.Core.TraderClient;
 
-namespace TradingAgent.Agents.Extensions;
+namespace TradingAgent.Core.Extensions;
 
 public static class StockIndicatorExtensions
 {
