@@ -42,7 +42,7 @@ public class ResearchTeamAgent :
     {
         this._config = config;
             
-        var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.FastAIModel);
+        var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.SmartAIModel);
         this._bullishResearcher = new OpenAIChatAgent(
                 chatClient: client, 
                 name: AgentName, 
@@ -131,27 +131,28 @@ public class ResearchTeamAgent :
         for (var i = 0; i < maxRounds; i++)
         {
             // bearish
-            var bearishMessage = new TextMessage(Role.User, ResearchTeamPrompt.BearishDiscussionPrompt);
-            chatHistory.Add(bearishMessage);
+            var lastBullishJson = bullishHistory.Last().GetContent();
+            var bearishPrompt = ResearchTeamPrompt.BearishDiscussionPrompt
+                .Replace("{last_bullish}", lastBullishJson);
+            chatHistory.Add(new TextMessage(Role.User, bearishPrompt));
             
-            var bearishReply = await this._bearishResearcher.GenerateReplyAsync(
+            var bearishReply = await _bearishResearcher.GenerateReplyAsync(
                 messages: chatHistory,
-                options: new GenerateReplyOptions
-                {
-                    OutputSchema = discussionSchema,
-                });
+                options: new GenerateReplyOptions { OutputSchema = discussionSchema }
+            );
             chatHistory.Add(bearishReply);
             bearishHistory.Add(bearishReply);
             
             // bullish
-            var bullishMessage = new TextMessage(Role.User, ResearchTeamPrompt.BullishDiscussionPrompt);
-            chatHistory.Add(bullishMessage);
-            var bullishReply = await this._bearishResearcher.GenerateReplyAsync(
+            var lastBearishJson = bearishHistory.Last().GetContent();
+            var bullishPrompt = ResearchTeamPrompt.BullishDiscussionPrompt
+                .Replace("{last_bearish}", lastBearishJson);
+            chatHistory.Add(new TextMessage(Role.User, bullishPrompt));
+
+            var bullishReply = await _bullishResearcher.GenerateReplyAsync(
                 messages: chatHistory,
-                options: new GenerateReplyOptions
-                {
-                    OutputSchema = discussionSchema,
-                });
+                options: new GenerateReplyOptions { OutputSchema = discussionSchema }
+            );
             chatHistory.Add(bullishReply);
             bullishHistory.Add(bullishReply);
             
