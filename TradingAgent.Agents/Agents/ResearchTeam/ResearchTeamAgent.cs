@@ -99,12 +99,18 @@ public class ResearchTeamAgent :
         var discussionSchema = schemaBuilder.FromType<Discussion>().Build();
         
         // initially makes a bullish analysis
-        var technicalAnalysisResult = JsonConvert.SerializeObject(this._technicalAnalysisResponse.AnalysisResult);
+        var hourCandleAnalysis = JsonConvert.SerializeObject(this._technicalAnalysisResponse.OneHourCandleAnalysis);
+        var fourHourCandleAnalysis = JsonConvert.SerializeObject(this._technicalAnalysisResponse.FourHourCandleAnalysis);
+        var dayCandleAnalysis = JsonConvert.SerializeObject(this._technicalAnalysisResponse.DayCandleAnalysis);
         var message = ResearchTeamPrompt.BullishInitialThinkingPrompt;
         message = message
             .Replace("{ticker}", this._technicalAnalysisResponse.MarketContext.Ticker)
             .Replace("{name}", this._technicalAnalysisResponse.MarketContext.Name)
-            .Replace("{technical_analysis_result}", technicalAnalysisResult);
+            .Replace("{hour_technical_analysis_result}", hourCandleAnalysis)
+            .Replace("{four_hour_technical_analysis_result}", fourHourCandleAnalysis)
+            .Replace("{day_technical_analysis_result}", dayCandleAnalysis);
+        
+        this._logger.LogInformation("[{name}] {message}", nameof(ResearchTeamAgent), message);
 
         var initMessage = new TextMessage(Role.User, message);
         chatHistory.Add(initMessage);

@@ -1,6 +1,7 @@
 using System.Text;
 using ConsoleTables;
 using TradingAgent.Agents.Services;
+using TradingAgent.Core.Config;
 using TradingAgent.Core.TraderClient;
 using Chance = TradingAgent.Core.TraderClient.Chance;
 using Ticker = TradingAgent.Core.TraderClient.Ticker;
@@ -30,7 +31,7 @@ public static class SharedUtils
         return table.ToMinimalString();
     }
     
-    public static async Task<string> GetCurrentPositionPrompt(IUpbitClient upbitClient, List<string> availableMarket, List<Ticker> tickerResponse)
+    public static async Task<string> GetCurrentPositionPrompt(IUpbitClient upbitClient, List<MarketContext> availableMarket, List<Ticker> tickerResponse)
     {
         var table = new ConsoleTable("Market", "Amount", "Average Buying Price", "Current Price");
         var totalKrw = 0d;
@@ -38,12 +39,12 @@ public static class SharedUtils
         {
             var request = new Chance.Request
             {
-                market = market
+                market = market.Ticker
             };
             var response = await upbitClient.GetChance(request);
             await Task.Delay(200);
             
-            var ticker = tickerResponse.FirstOrDefault(t => t.market == market);
+            var ticker = tickerResponse.FirstOrDefault(t => t.market == market.Ticker);
             if (ticker == null)
             {
                 continue;

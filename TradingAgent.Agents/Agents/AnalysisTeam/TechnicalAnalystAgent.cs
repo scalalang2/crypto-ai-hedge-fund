@@ -38,7 +38,6 @@ public class TechnicalAnalystAgent :
         WithHourCandle,
         WithFourHourCandle,
         WithDayCandle,
-        FinalStep
     }
     
     private OrderedDictionary<ReasoningStep, string> userMessageSteps = new();
@@ -65,45 +64,66 @@ public class TechnicalAnalystAgent :
         this.userMessageSteps.Add(ReasoningStep.WithHourCandle, TechnicalAnalystPrompt.UserPromptStep1);
         this.userMessageSteps.Add(ReasoningStep.WithFourHourCandle, TechnicalAnalystPrompt.UserPromptStep2);
         this.userMessageSteps.Add(ReasoningStep.WithDayCandle, TechnicalAnalystPrompt.UserPromptStep3);
-        this.userMessageSteps.Add(ReasoningStep.FinalStep, TechnicalAnalystPrompt.UserPromptFinalStep);
     }
 
     public async ValueTask HandleAsync(StartAnalysisRequest item, MessageContext messageContext)
-    {
-        // ISO-8061 format
+    { 
         var currentDateTime = DateTimeUtil.CurrentDateTimeToString();
         var chatHistory = new List<IMessage>();
         
         var schemaBuilder = new JsonSchemaBuilder().FromType<TechnicalAnalysisResult>();
         var schema = schemaBuilder.Build();
         
+        var response = new TechnicalAnalysisResponse
+        {
+            MarketContext = item.MarketContext,
+        };
+        
         foreach(var step in userMessageSteps)
         {
             var message = await this.GenerateReasoningMessage(step.Key, item.MarketContext.Ticker, currentDateTime);
             this._logger.LogInformation("[{name}] {message}", nameof(TechnicalAnalystAgent), message);
-            var promptMessage = new TextMessage(Role.User, message);
-            chatHistory.Add(promptMessage);
             
+            var promptMessage = new TextMessage(Role.User, message);
             var reply = await this._agent.GenerateReplyAsync(
-                messages: chatHistory,
+                messages: [promptMessage],
                 options: new GenerateReplyOptions
                 {
                     OutputSchema = schema,
                 });
-            chatHistory.Add(reply);
-        }
 
-        var analysisResult = JsonSerializer.Deserialize<TechnicalAnalysisResult>(chatHistory.Last().GetContent());
-        if (analysisResult == null)
-        {
-            throw new InvalidOperationException("Failed to deserialize the analysis result.");
+            switch (step.Key)
+            {
+                case ReasoningStep.WithHourCandle:
+                    var HourCandleAnalysis = JsonSerializer.Deserialize<TechnicalAnalysisResult>(reply.GetContent());
+                    if (HourCandleAnalysis == null)
+                    {
+                        throw new InvalidOperationException("Failed to deserialize the analysis result.");
+                    }
+                    
+                    response.OneHourCandleAnalysis = HourCandleAnalysis;
+                    break;
+                case ReasoningStep.WithFourHourCandle:
+                    var fourHourCandleAnalysis = JsonSerializer.Deserialize<TechnicalAnalysisResult>(reply.GetContent());
+                    if (fourHourCandleAnalysis == null)
+                    {
+                        throw new InvalidOperationException("Failed to deserialize the analysis result.");
+                    }
+                    
+                    response.FourHourCandleAnalysis = fourHourCandleAnalysis;
+                    break;
+                case ReasoningStep.WithDayCandle:
+                    var dayCandleAnalysis = JsonSerializer.Deserialize<TechnicalAnalysisResult>(reply.GetContent());
+                    if (dayCandleAnalysis == null)
+                    {
+                        throw new InvalidOperationException("Failed to deserialize the analysis result.");
+                    }
+                    response.DayCandleAnalysis = dayCandleAnalysis;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
-
-        var response = new TechnicalAnalysisResponse
-        {
-            MarketContext = item.MarketContext,
-            AnalysisResult = analysisResult
-        };
         await this.PublishMessageAsync(response, new TopicId(nameof(ResearchTeamAgent)));
     }
 
@@ -132,7 +152,6 @@ public class TechnicalAnalystAgent :
 
                 return message;
             }
-                break;
             case ReasoningStep.WithFourHourCandle:
             {
                 var message = this.userMessageSteps[reasoningStep];
@@ -153,7 +172,6 @@ public class TechnicalAnalystAgent :
 
                 return message;
             }
-                break;
             case ReasoningStep.WithDayCandle:
             {
                 var message = this.userMessageSteps[reasoningStep];
@@ -173,18 +191,7 @@ public class TechnicalAnalystAgent :
                     .Replace("{daily_candle_bollinger_bands}", this.GetBollingerBand(candles));
                 
                 return message;
-            }
-                break;
-            case ReasoningStep.FinalStep:
-            {
-                var message = this.userMessageSteps[reasoningStep];
-                
-                message = message
-                    .Replace("{ticker}", ticker);
-                
-                return message;
-            }
-                break;
+            };
             default:
                 throw new ArgumentOutOfRangeException(nameof(reasoningStep), reasoningStep, null);
         }

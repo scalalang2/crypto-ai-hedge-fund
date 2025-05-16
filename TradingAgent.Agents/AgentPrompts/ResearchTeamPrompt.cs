@@ -34,7 +34,14 @@ Let's think step by step and analyze the data.
 
 # Analysis Team
 ## Technical Analst
-{technical_analysis_result}
+### One Hour Candle Analysis
+{hour_technical_analysis_result}
+
+### Four Hour Candle Analysis
+{four_hour_technical_analysis_result}
+
+### Day Candle Analysis
+{day_technical_analysis_result}
 
 Format your output strictly according to the following schema:
 {

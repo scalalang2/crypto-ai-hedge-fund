@@ -1,14 +1,19 @@
+using System.Text;
 using AutoGen.Core;
 using AutoGen.OpenAI;
 using AutoGen.OpenAI.Extension;
 using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using OpenAI;
+using TradingAgent.Agents.AgentPrompts;
 using TradingAgent.Agents.Messages.AnalysisTeam;
 using TradingAgent.Agents.Messages.ResearchTeam;
 using TradingAgent.Agents.Messages.TradingTeam;
+using TradingAgent.Agents.Utils;
 using TradingAgent.Core.Config;
+using TradingAgent.Core.TraderClient;
 
 namespace TradingAgent.Agents.Agents.TradingTeam;
 
@@ -18,8 +23,9 @@ public class TraderAgent :
     IHandle<AdjustedTransactionMessage>,
     IHandle<ResearchResultResponse>
 {
-    private const string AgentName = "Trader Agent";
+    private const string AgentName = "TraderAgent";
     
+    private readonly IUpbitClient _upbitClient;
     private readonly AppConfig _config;
     private readonly AutoGen.Core.IAgent _agent;
     private readonly Dictionary<string, ResearchResultResponse> _researchResult = new();
@@ -27,16 +33,18 @@ public class TraderAgent :
     public TraderAgent(
         AgentId id, 
         IAgentRuntime runtime, 
+        IUpbitClient upbitClient,
         ILogger<BaseAgent> logger, 
         AppConfig config) : base(id, runtime, AgentName, logger)
     {
+        this._upbitClient = upbitClient;
         this._config = config;
             
-        var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.FastAIModel);
+        var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.SmartAIModel);
         this._agent = new OpenAIChatAgent(
                 chatClient: client, 
                 name: AgentName, 
-                systemMessage: "")
+                systemMessage: TraderPrompt.TraderSystemMessage)
             .RegisterMessageConnector()
             .RegisterPrintMessage();
     }
@@ -63,8 +71,59 @@ public class TraderAgent :
             return;
         }
         
-        // make a proposal and send to the risk manager
+        var tickerResponse = await this._upbitClient.GetTicker(string.Join(",", this._config.Markets.Select(market => market.Ticker)));
+        var currentPrice = await SharedUtils.CurrentTickers(tickerResponse);
+        var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this._config.Markets, tickerResponse);
+        var chatHistory = new StringBuilder();
+
+        foreach (var (market, result) in _researchResult)
+        {
+            var jsonString = JsonConvert.SerializeObject(result.DiscussionHistory);
+            chatHistory.AppendLine($"## {result.MarketContext.Ticker} ({result.MarketContext.Name}) Research Result");
+            chatHistory.AppendLine($"### Confidence: {jsonString}");
+            chatHistory.AppendLine();
+        }
+        
+        var message = TraderPrompt.TraderUserMessage
+            .Replace("{research_team_chat_history}", chatHistory.ToString())
+            .Replace("{current_price}", currentPrice)
+            .Replace("{current_portfolio}", currentPosition);
+        
+        this._logger.LogInformation("Trader's prompt {message}", message);
+
+        var chatHistories = new List<IMessage>();
+        const int maxSteps = 10;
+        
         var response = new ProposeTransactionMessage();
+        var proposals = new List<TransactionProposal>();
+        
+        for(var i = 0; i < maxSteps; i++)
+        {
+            var userMessage = new TextMessage(Role.User, message);
+            chatHistories.Add(userMessage);
+            var reasoning = await this._agent.SendAsync(chatHistory: chatHistories);
+            
+            if (reasoning.GetContent() is not string reasoningContent)
+            {
+                throw new Exception("Failed to get reasoning content");
+            }
+            
+            if (reasoningContent.Contains("[TERMINATE]"))
+            {
+                var terminateMessage = reasoningContent.Split("[TERMINATE]")[1];
+                proposals = JsonConvert.DeserializeObject<List<TransactionProposal>>(terminateMessage);
+                if (proposals == null)
+                {
+                    throw new Exception("Failed to deserialize ProposeTransactionMessage");
+                }
+
+                response.Proposals = proposals;
+                break;
+            }
+            chatHistories.Add(reasoning);
+        }
+        
+        // make a proposal and send to the risk manager
         await this.PublishMessageAsync(response, new TopicId(nameof(RiskManagerAgent)));
     }
 }

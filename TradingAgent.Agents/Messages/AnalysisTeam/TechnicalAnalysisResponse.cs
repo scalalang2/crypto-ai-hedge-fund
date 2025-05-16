@@ -20,5 +20,7 @@ public class TechnicalAnalysisResponse
 {
     public MarketContext MarketContext { get; set; } = new();
 
-    public TechnicalAnalysisResult AnalysisResult { get; set; } = new();
+    public TechnicalAnalysisResult OneHourCandleAnalysis { get; set; } = new();
+    public TechnicalAnalysisResult FourHourCandleAnalysis { get; set; } = new();
+    public TechnicalAnalysisResult DayCandleAnalysis { get; set; } = new();
 }
