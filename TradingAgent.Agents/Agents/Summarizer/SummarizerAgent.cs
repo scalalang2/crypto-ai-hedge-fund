@@ -86,18 +86,20 @@ public class SummarizerAgent :
     
     public async ValueTask HandleAsync(SummarizeRequest item, MessageContext messageContext)
     {
+        var jsonMessage = JsonConvert.SerializeObject(item);
         var prompt = $"""
                       Please summarize the following message in Korean at most 200 words.
 
                       The message is 
-                      {item.Message}
-                      
-                      Emphasize the key points and important information. with **<message>** format.
+                      {jsonMessage}
                       
                       Please provide message with the following format:
+                      Cite each fact in bolded square brackets, e.g. **[RSI=45.2]**.
                       
                       ### {messageContext.Sender}
-                      messages ...
+                      - **Ticker 1** : summarized messages are here
+                      - **Ticker 2** : summarized messages are here
+                      - ...
                       """;
         
         var message = new TextMessage(Role.User, prompt);

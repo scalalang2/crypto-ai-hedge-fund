@@ -10,9 +10,11 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OpenAI;
 using TradingAgent.Agents.AgentPrompts;
+using TradingAgent.Agents.Agents.Summarizer;
 using TradingAgent.Agents.Agents.TradingTeam;
 using TradingAgent.Agents.Messages.AnalysisTeam;
 using TradingAgent.Agents.Messages.ResearchTeam;
+using TradingAgent.Agents.Messages.Summarizer;
 using TradingAgent.Core.Config;
 
 namespace TradingAgent.Agents.Agents.ResearchTeam;
@@ -181,6 +183,10 @@ public class ResearchTeamAgent :
             MarketContext = this._technicalAnalysisResponse.MarketContext,
             DiscussionHistory = discussionHistory,
         };
+        await this.PublishMessageAsync(new SummarizeRequest
+        {
+            Message = response,
+        }, new TopicId(nameof(SummarizerAgent)));
         await this.PublishMessageAsync(response, new TopicId(nameof(TraderAgent)));
     }
 }

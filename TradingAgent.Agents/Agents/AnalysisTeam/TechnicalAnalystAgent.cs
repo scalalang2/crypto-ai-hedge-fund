@@ -14,8 +14,10 @@ using OpenAI;
 using Skender.Stock.Indicators;
 using TradingAgent.Agents.AgentPrompts;
 using TradingAgent.Agents.Agents.ResearchTeam;
+using TradingAgent.Agents.Agents.Summarizer;
 using TradingAgent.Agents.Extensions;
 using TradingAgent.Agents.Messages.AnalysisTeam;
+using TradingAgent.Agents.Messages.Summarizer;
 using TradingAgent.Core.Config;
 using TradingAgent.Core.TraderClient;
 using TradingAgent.Core.Utils;
@@ -124,6 +126,11 @@ public class TechnicalAnalystAgent :
                     throw new ArgumentOutOfRangeException();
             }
         }
+        
+        await this.PublishMessageAsync(new SummarizeRequest
+        {
+            Message = response,
+        }, new TopicId(nameof(SummarizerAgent)));
         await this.PublishMessageAsync(response, new TopicId(nameof(ResearchTeamAgent)));
     }
 
