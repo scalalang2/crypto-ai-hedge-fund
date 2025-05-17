@@ -8,12 +8,6 @@ public static class HumanReadableExtensions
 {
     public static string ToReadableString(this List<Quote> candles)
     {
-        var table = new ConsoleTable("Date", "Open Price", "Close Price", "High Price", "Low Price", "Volume");
-        foreach (var candle in candles)
-        {
-            table.AddRow(candle.Date, candle.Open, candle.Close, candle.High, candle.Low, candle.Volume);
-        }
-
-        return table.ToString();
+        return ConsoleTable.From(candles).ToString();
     }
 }

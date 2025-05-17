@@ -34,4 +34,6 @@ public class AppConfig
     public UpbitConfig Upbit { get; set; } = new();
     
     public DiscordConfig Discord { get; set; } = new();
+    
+    public string DatabasePath { get; set; } = "./TradingAgent.db";
 }

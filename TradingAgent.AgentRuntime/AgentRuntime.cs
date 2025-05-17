@@ -12,9 +12,9 @@ using TradingAgent.Agents.Agents.ResearchTeam;
 using TradingAgent.Agents.Agents.Summarizer;
 using TradingAgent.Agents.Agents.TradingTeam;
 using TradingAgent.Agents.Messages.AnalysisTeam;
-using TradingAgent.Agents.Services;
 using TradingAgent.Core.Config;
 using TradingAgent.Core.MessageSender;
+using TradingAgent.Core.Storage;
 using TradingAgent.Core.TraderClient;
 using TradingAgent.Core.TraderClient.Upbit;
 
@@ -36,7 +36,8 @@ public class AgentRuntime(
         appBuilder.Services.AddSingleton<IUpbitClient>(upbitClient);
         appBuilder.Services.AddSingleton(_client);
         appBuilder.Services.AddSingleton<IMessageSender, MessageSender>();
-        appBuilder.Services.AddSingleton<ITradingHistoryService, TradingHistoryService>();
+        appBuilder.Services.AddSingleton<TradingDbContext>();
+        appBuilder.Services.AddSingleton<IStorageService, StorageService>();
         appBuilder.Services.AddLogging(builder => builder.AddConsole());
 
         appBuilder.UseInProcessRuntime(deliverToSelf: true)

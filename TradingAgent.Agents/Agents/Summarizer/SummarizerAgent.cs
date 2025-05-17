@@ -1,6 +1,7 @@
 using AutoGen.Core;
 using AutoGen.OpenAI;
 using AutoGen.OpenAI.Extension;
+using ConsoleTables;
 using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
@@ -10,8 +11,11 @@ using TradingAgent.Agents.AgentPrompts;
 using TradingAgent.Agents.Messages.AnalysisTeam;
 using TradingAgent.Agents.Messages.Summarizer;
 using TradingAgent.Agents.Messages.TradingTeam;
+using TradingAgent.Agents.Utils;
 using TradingAgent.Core.Config;
 using TradingAgent.Core.MessageSender;
+using TradingAgent.Core.Storage;
+using TradingAgent.Core.TraderClient;
 using Formatting = System.Xml.Formatting;
 
 namespace TradingAgent.Agents.Agents.Summarizer;
@@ -20,20 +24,27 @@ namespace TradingAgent.Agents.Agents.Summarizer;
 public class SummarizerAgent :
     BaseAgent,
     IHandle<AdjustedTransactionProposal>,  
-    IHandle<SummarizeRequest> {
+    IHandle<SummarizeRequest>,  
+    IHandle<SendPerformanceMessage> {
     private const string AgentName = "SummarizerAgent";
 
+    private readonly IUpbitClient _upbitClient;
+    private readonly IStorageService _storageService;
     private readonly AppConfig _config;
     private readonly AutoGen.Core.IAgent _agent;
     private readonly IMessageSender _messageSender;
     
     public SummarizerAgent(
         AgentId id,
+        IUpbitClient upbitClient,
+        IStorageService storageService,
         IAgentRuntime runtime,
         ILogger<BaseAgent> logger,
         AppConfig config, 
         IMessageSender messageSender) : base(id, runtime, AgentName, logger)
     {
+        this._upbitClient = upbitClient;
+        this._storageService = storageService;
         this._config = config;
         this._messageSender = messageSender;
 
@@ -98,5 +109,52 @@ public class SummarizerAgent :
         }
         
         await this._messageSender.SendMessage(summary);
+    }
+
+    public async ValueTask HandleAsync(SendPerformanceMessage item, MessageContext messageContext)
+    {
+        var tickerResponse = await this._upbitClient.GetTicker(string.Join(",", this._config.Markets.Select(market => market.Ticker)));
+        var currentPrice = SharedUtils.CurrentTickers(tickerResponse);
+        var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this._config.Markets, tickerResponse);
+        
+        var positions = await this._storageService.GetAllPositionsAsync();
+        var recordedPosition = ConsoleTable.From<Position>(positions).ToMinimalString();
+        
+        var tradeHistory = await this._storageService.GetTradeHistoryAsync(10);
+        var tradeHistoryTable = ConsoleTable.From<TradeHistoryRecord>(tradeHistory).ToMinimalString();
+        
+        var performance = await this._storageService.GetPerformanceReportAsync();
+        
+        await this._messageSender.SendMessage($"""
+                                               ### Current Price
+                                               ```
+                                               {currentPrice}
+                                               ```
+                                               """);
+
+        await this._messageSender.SendMessage($"""
+                                               ### Current Position
+                                               {currentPosition}
+                                               """);
+        
+        await this._messageSender.SendMessage($"""
+                                               ### Recorded Position
+                                               ```
+                                               {recordedPosition}
+                                               ```
+                                               """);
+        
+        await this._messageSender.SendMessage($"""
+                                               ### Trade History
+                                               ```
+                                               {tradeHistoryTable}
+                                               ```
+                                               """);
+
+        await this._messageSender.SendMessage($"""
+                                               ### Performance Report
+                                               **AR** : {performance.AnnualizedReturn}, **CR** : {performance.CumulativeReturn}, **MDD** : {performance.MaxDrawdown}, **Sharpe** : {performance.SharpeRatio}.
+                                               """);
+
     }
 }

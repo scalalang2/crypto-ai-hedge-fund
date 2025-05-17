@@ -16,5 +16,7 @@ public interface IUpbitClient
     
     public Task<List<Quote>> GetDayCandles(DayCandles.Request args);
     
-    public Task<List<Quote>> GetMinuteCandles(int unit, Candles.Request args);   
+    public Task<List<Quote>> GetMinuteCandles(int unit, Candles.Request args);
+
+    public Task<List<ClosedOrderHistory.Response>> GetOrderHistory(ClosedOrderHistory.Request args);
 }

@@ -2,6 +2,9 @@ using System.Text;
 using AutoGen.Core;
 using AutoGen.OpenAI;
 using AutoGen.OpenAI.Extension;
+using ConsoleTables;
+using Json.Schema;
+using Json.Schema.Generation;
 using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
@@ -10,10 +13,11 @@ using OpenAI;
 using TradingAgent.Agents.AgentPrompts;
 using TradingAgent.Agents.Agents.Summarizer;
 using TradingAgent.Agents.Messages.ResearchTeam;
+using TradingAgent.Agents.Messages.Summarizer;
 using TradingAgent.Agents.Messages.TradingTeam;
-using TradingAgent.Agents.Services;
 using TradingAgent.Agents.Utils;
 using TradingAgent.Core.Config;
+using TradingAgent.Core.Storage;
 using TradingAgent.Core.TraderClient;
 
 namespace TradingAgent.Agents.Agents.TradingTeam;
@@ -27,7 +31,7 @@ public class TraderAgent :
     private const string AgentName = "TraderAgent";
     
     private readonly IUpbitClient _upbitClient;
-    private readonly ITradingHistoryService _tradingHistoryService;
+    private readonly IStorageService _storageService;
     private readonly AppConfig _config;
     private readonly AutoGen.Core.IAgent _agent;
     private readonly Dictionary<string, ResearchResultResponse> _researchResult = new();
@@ -38,11 +42,11 @@ public class TraderAgent :
         IUpbitClient upbitClient,
         ILogger<BaseAgent> logger, 
         AppConfig config, 
-        ITradingHistoryService tradingHistoryService) : base(id, runtime, AgentName, logger)
+        IStorageService storageService) : base(id, runtime, AgentName, logger)
     {
         this._upbitClient = upbitClient;
         this._config = config;
-        this._tradingHistoryService = tradingHistoryService;
+        this._storageService = storageService;
 
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.SmartAIModel);
         this._agent = new OpenAIChatAgent(
@@ -74,6 +78,7 @@ public class TraderAgent :
         }
 
         await this.PublishMessageAsync(item, new TopicId(nameof(SummarizerAgent)));
+        await this.PublishMessageAsync(new SendPerformanceMessage(), new TopicId(nameof(SummarizerAgent)));
     }
 
     public async ValueTask HandleAsync(ResearchResultResponse item, MessageContext messageContext)
@@ -92,7 +97,7 @@ public class TraderAgent :
         }
         
         var tickerResponse = await this._upbitClient.GetTicker(string.Join(",", this._config.Markets.Select(market => market.Ticker)));
-        var currentPrice = await SharedUtils.CurrentTickers(tickerResponse);
+        var currentPrice = SharedUtils.CurrentTickers(tickerResponse);
         var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this._config.Markets, tickerResponse);
         var chatHistory = new StringBuilder();
 
@@ -110,40 +115,18 @@ public class TraderAgent :
             .Replace("{current_portfolio}", currentPosition);
         
         this._logger.LogInformation("Trader's prompt {message}", message);
-
-        var chatHistories = new List<IMessage>();
-        const int maxSteps = 10;
         
-        var response = new ProposeTransactionMessage();
-        var proposals = new List<TransactionProposal>();
-        
-        for(var i = 0; i < maxSteps; i++)
-        {
-            var userMessage = new TextMessage(Role.User, message);
-            chatHistories.Add(userMessage);
-            var reasoning = await this._agent.SendAsync(chatHistory: chatHistories);
-            
-            if (reasoning.GetContent() is not string reasoningContent)
+        var userMessage = new TextMessage(Role.User, message);
+        var reply = await this._agent.GenerateReplyAsync(
+            messages: [userMessage],
+            options: new GenerateReplyOptions
             {
-                throw new Exception("Failed to get reasoning content");
-            }
-            
-            if (reasoningContent.Contains("[TERMINATE]"))
-            {
-                var terminateMessage = reasoningContent.Split("[TERMINATE]")[1];
-                proposals = JsonConvert.DeserializeObject<List<TransactionProposal>>(terminateMessage);
-                if (proposals == null)
-                {
-                    throw new Exception("Failed to deserialize ProposeTransactionMessage");
-                }
-
-                response.Proposals = proposals;
-                break;
-            }
-            chatHistories.Add(reasoning);
-        }
+                OutputSchema = new JsonSchemaBuilder()
+                    .FromType<ProposeTransactionMessage>()
+                    .Build(),
+            });
         
-        // make a proposal and send to the risk manager
+        var response = JsonConvert.DeserializeObject<ProposeTransactionMessage>(reply.GetContent());
         await this.PublishMessageAsync(response, new TopicId(nameof(RiskManagerAgent)));
     }
     
@@ -184,26 +167,42 @@ public class TraderAgent :
             request.volume = quantity;
         }
         
-        await this._upbitClient.PlaceOrder(request);
-        await Task.Delay(500);
+        var orderPlaced = await this._upbitClient.PlaceOrder(request);
         
-        if (proposal.Action == sell)
+        // 언제 체결될지는 모르겠으나 2초 정도 대기해봄
+        await Task.Delay(2000);
+
+        var orderHistoryRequest = new ClosedOrderHistory.Request
         {
-            var chanceRequest = new Chance.Request
+            market = proposal.Ticker,
+            limit = "30",
+        };
+        var orderHistory= await _upbitClient.GetOrderHistory(orderHistoryRequest);
+        
+        foreach(var order in orderHistory)
+        {
+            this._logger.LogInformation("궁금하니까 찍어보자 {order}", order);
+            if(order.uuid != orderPlaced.uuid)
             {
-                market = proposal.Ticker
-            };
-            var chance = await this._upbitClient.GetChance(chanceRequest);
+                continue;
+            }
             
-            var tradeHistoryRecord = new TradeHistoryRecord
+            if (order.state == "done")
             {
-                Date = DateTime.UtcNow,
-                Ticker = proposal.Ticker,
-                BuyingPrice = Convert.ToDouble(chance.ask_account.avg_buy_price),
-                SellingPrice = price,
-                Amount = proposal.Quantity
-            };
-            await this._tradingHistoryService.AddTradeHistoryAsync(tradeHistoryRecord);
+                var orderPrice = Convert.ToDouble(order.price);
+                var orderAmount = Convert.ToDouble(order.executed_volume);
+                var orderType = order.side == "bid" ? buy : sell;
+                var trade = new TradeHistoryRecord
+                {
+                    Symbol = proposal.Ticker,
+                    OrderType = orderType,
+                    Price = orderPrice,
+                    Amount = orderAmount,
+                    Date = order.created_at,
+                };
+                
+                await this._storageService.AddTradeHistoryAsync(trade);
+            }
         }
     }
 }

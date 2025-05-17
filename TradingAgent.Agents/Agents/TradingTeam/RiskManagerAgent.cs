@@ -1,6 +1,7 @@
 using AutoGen.Core;
 using AutoGen.OpenAI;
 using AutoGen.OpenAI.Extension;
+using ConsoleTables;
 using Json.Schema;
 using Json.Schema.Generation;
 using Microsoft.AutoGen.Contracts;
@@ -49,7 +50,7 @@ public class RiskManagerAgent :
     public async ValueTask HandleAsync(ProposeTransactionMessage item, MessageContext messageContext)
     {
         var tickerResponse = await this._upbitClient.GetTicker(string.Join(",", this._config.Markets.Select(market => market.Ticker)));
-        var currentPrice = await SharedUtils.CurrentTickers(tickerResponse);
+        var currentPrice = SharedUtils.CurrentTickers(tickerResponse);
         var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this._config.Markets, tickerResponse);
         
         var message = RiskManagerPrompt.UserMessage
