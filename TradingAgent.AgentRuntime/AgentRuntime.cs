@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using TradingAgent.Agents.Agents;
 using TradingAgent.Agents.Agents.AnalysisTeam;
 using TradingAgent.Agents.Agents.ResearchTeam;
+using TradingAgent.Agents.Agents.Summarizer;
 using TradingAgent.Agents.Agents.TradingTeam;
 using TradingAgent.Agents.Messages.AnalysisTeam;
 using TradingAgent.Agents.Services;
@@ -45,7 +46,8 @@ public class AgentRuntime(
             .AddAgent<TechnicalAnalystAgent>(nameof(TechnicalAnalystAgent))
             .AddAgent<ResearchTeamAgent>(nameof(ResearchTeamAgent))
             .AddAgent<TraderAgent>(nameof(TraderAgent))
-            .AddAgent<RiskManagerAgent>(nameof(RiskManagerAgent));
+            .AddAgent<RiskManagerAgent>(nameof(RiskManagerAgent))
+            .AddAgent<SummarizerAgent>(nameof(SummarizerAgent));
         
         var agentApp = await appBuilder.BuildAsync();
         await agentApp.StartAsync();

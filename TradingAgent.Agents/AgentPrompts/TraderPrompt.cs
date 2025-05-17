@@ -14,6 +14,7 @@ Rules:
     Ensure this deep reasoning process involves at least 5 steps for each asset, fostering a thorough and comprehensive evaluation.
 4. Be aware that you're called every hour.
 5. Support long-term and short-term trends, and provide a comprehensive analysis of the market conditions, always grounding your analysis in specific data.
+6. Profit targets should be set at 5% for short-term trades and 10% for long-term trades. Loss limits should be set at 2% for short-term trades and 5% for long-term trades.
 
 ## Use the following format:
 [THOUGHT]
