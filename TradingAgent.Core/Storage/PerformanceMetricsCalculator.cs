@@ -49,7 +49,7 @@ public class PerformanceMetricsCalculator
 
         if (stdDev == 0) return 0;
 
-        // 일별 또는 기간별 무위험 수익률로 변환
+        // 기간별 무위험 수익률로 변환
         var periodicRiskFreeRate = Math.Pow(1 + riskFreeRate, 1.0 / tradingDaysPerYear) - 1;
         
         // (평균 기간 수익률 - 기간 무위험 수익률) / 기간 수익률 표준편차
@@ -57,8 +57,7 @@ public class PerformanceMetricsCalculator
         
         return sharpeRatio * Math.Sqrt(tradingDaysPerYear);
     }
-
-    // (Maximum Drawdown - MDD)
+    
     public double CalculateMaxDrawdown()
     {
         if (_returns.Count == 0) return 0;
