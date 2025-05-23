@@ -106,4 +106,26 @@ public class StorageService : IStorageService
             MaxDrawdown = calculator.CalculateMaxDrawdown()
         };
     }
+
+    public async Task UpdateReasoningRecordAsync(string ticker, DateTime date)
+    {
+        var data = await _dbContext.ReasoningRecords.FirstOrDefaultAsync(p => p.Ticker == ticker);
+        if (data == null)
+        {
+            data = new ReasoningRecord
+            {
+                Ticker = ticker,
+                LastReasoningTime = date,
+            };
+            _dbContext.ReasoningRecords.Add(data);
+        }
+
+        data.LastReasoningTime = date;
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<ReasoningRecord?> GetReasoningRecordAsync(string ticker)
+    {
+        return await _dbContext.ReasoningRecords.FirstOrDefaultAsync(p => p.Ticker == ticker);
+    }
 }

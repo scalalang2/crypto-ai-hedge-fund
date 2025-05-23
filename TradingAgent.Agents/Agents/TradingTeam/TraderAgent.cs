@@ -15,6 +15,7 @@ using TradingAgent.Agents.Agents.Summarizer;
 using TradingAgent.Agents.Messages.ResearchTeam;
 using TradingAgent.Agents.Messages.Summarizer;
 using TradingAgent.Agents.Messages.TradingTeam;
+using TradingAgent.Agents.State;
 using TradingAgent.Agents.Utils;
 using TradingAgent.Core.Config;
 using TradingAgent.Core.Storage;
@@ -34,6 +35,7 @@ public class TraderAgent :
     private readonly IStorageService _storageService;
     private readonly AppConfig _config;
     private readonly AutoGen.Core.IAgent _agent;
+    private readonly AgentSharedState _state;
     private readonly Dictionary<string, ResearchResultResponse> _researchResult = new();
         
     public TraderAgent(
@@ -42,11 +44,13 @@ public class TraderAgent :
         IUpbitClient upbitClient,
         ILogger<BaseAgent> logger, 
         AppConfig config, 
-        IStorageService storageService) : base(id, runtime, AgentName, logger)
+        IStorageService storageService, 
+        AgentSharedState state) : base(id, runtime, AgentName, logger)
     {
         this._upbitClient = upbitClient;
         this._config = config;
         this._storageService = storageService;
+        this._state = state;
 
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.SmartAIModel);
         this._agent = new OpenAIChatAgent(
@@ -62,6 +66,7 @@ public class TraderAgent :
         var ticker = await this._upbitClient.GetTicker(string.Join(",", this._config.Markets.Select(x => x.Ticker)));
         foreach (var proposal in item.Recommendations)
         {
+            await this._storageService.UpdateReasoningRecordAsync(proposal.Ticker, DateTime.UtcNow);
             if (proposal.Action == "Hold" || proposal.Quantity == 0)
             {
                 continue;
@@ -76,7 +81,7 @@ public class TraderAgent :
             await Task.Delay(500); // rest to avoid rate limit
             await this.PlaceOrder(proposal, price.Value);
         }
-
+        
         await this.PublishMessageAsync(item, new TopicId(nameof(SummarizerAgent)));
         await this.PublishMessageAsync(new SendPerformanceMessage(), new TopicId(nameof(SummarizerAgent)));
     }
@@ -91,7 +96,7 @@ public class TraderAgent :
     private async Task TryProposeTrade()
     {
         // ensure that all research results are received
-        if (this._config.Markets.Any(market => !this._researchResult.ContainsKey(market.Ticker)))
+        if (this._state.Candidates.Any(market => this._researchResult.ContainsKey(market.Key)) == false)
         {
             return;
         }

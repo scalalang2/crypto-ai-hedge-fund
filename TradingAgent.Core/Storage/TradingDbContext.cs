@@ -7,6 +7,7 @@ public class TradingDbContext : DbContext
 {
     public DbSet<TradeHistoryRecord> TradeHistoryRecords { get; set; }
     public DbSet<Position> Positions { get; set; }
+    public DbSet<ReasoningRecord?> ReasoningRecords { get; set; }
 
     private readonly string _dbPath;
 
@@ -27,6 +28,10 @@ public class TradingDbContext : DbContext
 
         modelBuilder.Entity<Position>()
             .HasIndex(p => p.Symbol)
+            .IsUnique();
+
+        modelBuilder.Entity<ReasoningRecord>()
+            .HasIndex(r => r.Ticker)
             .IsUnique();
     }
 }
