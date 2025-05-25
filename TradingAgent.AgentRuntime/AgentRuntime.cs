@@ -11,6 +11,7 @@ using TradingAgent.Agents.Agents.AnalysisTeam;
 using TradingAgent.Agents.Agents.ResearchTeam;
 using TradingAgent.Agents.Agents.Summarizer;
 using TradingAgent.Agents.Agents.TradingTeam;
+using TradingAgent.Agents.Messages;
 using TradingAgent.Agents.Messages.AnalysisTeam;
 using TradingAgent.Agents.State;
 using TradingAgent.Core.Config;
@@ -59,21 +60,8 @@ public class AgentRuntime(
         _client.Log += LogAsync;
         _client.MessageReceived += MessageReceivedAsync;
         await _client.StartAsync();
-
-
-        foreach (var marketContext in options.Value.Markets)
-        {
-            var message = new StartAnalysisRequest
-            {
-                MarketContext = new MarketContext
-                {
-                    Ticker = marketContext.Ticker,
-                    Name = marketContext.Name,
-                }
-            };
-            await agentApp.PublishMessageAsync(message, new TopicId(nameof(GateKeeperAgent)), cancellationToken: cancellationToken);
-        }
         
+        await agentApp.PublishMessageAsync(new StartGateKeeperRequest(), new TopicId(nameof(GateKeeperAgent)), cancellationToken: cancellationToken);
         System.Environment.Exit(0);
     }
 
