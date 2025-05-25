@@ -135,6 +135,8 @@ public class TraderAgent :
             });
         
         var response = JsonConvert.DeserializeObject<ProposeTransactionMessage>(reply.GetContent());
+
+        await this.PublishMessageAsync(response, new TopicId(nameof(SummarizerAgent)));
         await this.PublishMessageAsync(response, new TopicId(nameof(RiskManagerAgent)));
     }
     
