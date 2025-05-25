@@ -1,21 +1,26 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TradingAgent.Core.Config;
 
 namespace TradingAgent.Core.Storage;
 
 public class TradingDbContext : DbContext
 {
+    private readonly ILogger<TradingDbContext> _logger;
     public DbSet<TradeHistoryRecord> TradeHistoryRecords { get; set; }
     public DbSet<Position> Positions { get; set; }
     public DbSet<ReasoningRecord?> ReasoningRecords { get; set; }
 
     private readonly string _dbPath;
 
-    public TradingDbContext(AppConfig config)
+    public TradingDbContext(AppConfig config, ILogger<TradingDbContext> logger)
     {
+        this._logger = logger;
         var folder = Environment.SpecialFolder.LocalApplicationData;
         var path = Environment.GetFolderPath(folder);
-        _dbPath = Path.Join(path, config.DatabasePath);
+        this._dbPath = Path.Join(path, config.DatabasePath);
+        
+        this._logger.LogInformation("db path: {databasePath}", this._dbPath);
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
