@@ -28,11 +28,12 @@ public class GateKeeperAgent :
     private readonly IMessageSender _messageSender;
     private readonly IStorageService _storageService;
     private readonly AgentSharedState _state;
+    private readonly ILogger<GateKeeperAgent> _logger;
         
     public GateKeeperAgent(
         AgentId id, 
         IAgentRuntime runtime, 
-        ILogger<BaseAgent> logger, 
+        ILogger<GateKeeperAgent> logger, 
         AppConfig config, 
         AgentSharedState state, 
         IUpbitClient upbitClient, 
@@ -44,6 +45,7 @@ public class GateKeeperAgent :
         this._upbitClient = upbitClient;
         this._messageSender = messageSender;
         this._storageService = storageService;
+        this._logger = logger;
     }
 
     public async ValueTask HandleAsync(StartGateKeeperRequest item, MessageContext messageContext)
