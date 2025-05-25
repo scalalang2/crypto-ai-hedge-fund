@@ -1,3 +1,4 @@
+using System.Text;
 using AutoGen.Core;
 using AutoGen.OpenAI;
 using AutoGen.OpenAI.Extension;
@@ -11,6 +12,7 @@ using TradingAgent.Agents.AgentPrompts;
 using TradingAgent.Agents.Messages.AnalysisTeam;
 using TradingAgent.Agents.Messages.Summarizer;
 using TradingAgent.Agents.Messages.TradingTeam;
+using TradingAgent.Agents.State;
 using TradingAgent.Agents.Utils;
 using TradingAgent.Core.Config;
 using TradingAgent.Core.MessageSender;
@@ -34,6 +36,12 @@ public class SummarizerAgent :
     private readonly AppConfig _config;
     private readonly AutoGen.Core.IAgent _agent;
     private readonly IMessageSender _messageSender;
+    private readonly AgentSharedState _state;
+    
+    /// <summary>
+    /// This dictionary stores the messages that are requested to be summarized by agents.
+    /// </summary>
+    private Dictionary<string, List<string>> messageRequests = new();
     
     public SummarizerAgent(
         AgentId id,
@@ -42,12 +50,14 @@ public class SummarizerAgent :
         IAgentRuntime runtime,
         ILogger<BaseAgent> logger,
         AppConfig config, 
-        IMessageSender messageSender) : base(id, runtime, AgentName, logger)
+        IMessageSender messageSender, 
+        AgentSharedState state) : base(id, runtime, AgentName, logger)
     {
         this._upbitClient = upbitClient;
         this._storageService = storageService;
         this._config = config;
         this._messageSender = messageSender;
+        this._state = state;
 
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.FastAIModel);
         this._agent = new OpenAIChatAgent(
@@ -69,23 +79,47 @@ public class SummarizerAgent :
         await this.SendTransactionProposalMessage(messageContext, jsonMessage);
     }
 
+    /// <summary>
+    /// This method handles the summarization request from various agents.
+    /// This gathers the messages by the sender and summarizes them in Korean.
+    /// </summary>
+    /// <param name="item"></param>
+    /// <param name="messageContext"></param>
+    /// <exception cref="Exception"></exception>
     public async ValueTask HandleAsync(SummarizeRequest item, MessageContext messageContext)
     {
         var jsonMessage = JsonConvert.SerializeObject(item);
-        var prompt = $"""
-                      Please summarize the following message in Korean at most 200 words.
+        if (jsonMessage == null)
+        {
+            throw new ArgumentNullException(nameof(jsonMessage), "The message to summarize cannot be null.");
+        }
+        
+        var sender = messageContext.Sender!.ToString();
+        if (this.messageRequests.TryGetValue(sender, out var requests) == false)
+        {
+            requests = [];
+        }
+        requests.Add(jsonMessage);
 
-                      The message is 
-                      {jsonMessage}
-                      
-                      Please provide message with the following format:
-                      Cite each fact in bolded square brackets, e.g. **[RSI=45.2]**.
-                      
-                      ### {messageContext.Sender}
-                      - **Ticker 1** : summarized messages are here
-                      - **Ticker 2** : summarized messages are here
-                      - ...
-                      """;
+        if (requests.Count != this._state.Candidates.Count)
+        {
+            return;
+        }
+        
+        var sb = new StringBuilder();
+        sb.AppendLine("Please summarize the following message in Korean at most 200 words.");
+        sb.AppendLine("The message is ");
+        foreach (var request in requests)
+        {
+            sb.AppendLine(request);
+        }
+        sb.AppendLine("Please provide message with the following format:");
+        sb.AppendLine("Cite each fact in bolded square brackets, e.g. **[RSI=45.2]**.");
+        sb.AppendLine("### " + sender);
+        sb.AppendLine("- **Ticker 1** : summarized messages are here");
+        sb.AppendLine("- **Ticker 2** : summarized messages are here");
+        sb.AppendLine("- ...");
+        var prompt = sb.ToString();
         
         var message = new TextMessage(Role.User, prompt);
         var result = await this._agent.GenerateReplyAsync(messages: [message]);
