@@ -11,10 +11,7 @@ Parser.Default.ParseArguments<Options>(args)
                 case "api_hash": return o.ApiHash;
                 case "phone_number": return o.PhoneNumber;
                 case "verification_code": Console.Write("Code: "); return Console.ReadLine();
-                case "first_name": return "John";      // if sign-up is required
-                case "last_name": return "Doe";        // if sign-up is required
-                case "password": return "secret!";     // if user has enabled 2FA
-                default: return null;                  // let WTelegramClient decide the default config
+                default: return null;
             }
         }
         

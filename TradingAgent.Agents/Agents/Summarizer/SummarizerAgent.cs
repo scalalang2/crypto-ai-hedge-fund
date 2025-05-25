@@ -98,6 +98,7 @@ public class SummarizerAgent :
         if (this.messageRequests.TryGetValue(sender, out var requests) == false)
         {
             requests = [];
+            this.messageRequests.Add(sender, requests);
         }
         requests.Add(jsonMessage);
 
