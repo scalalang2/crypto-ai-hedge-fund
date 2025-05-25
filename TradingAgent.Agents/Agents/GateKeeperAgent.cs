@@ -86,7 +86,7 @@ public class GateKeeperAgent :
                         continue;
                     }
 
-                    if (currentPrice < currentPosition.AverageBuyPrice * 1.05d)
+                    if (Math.Abs(currentPrice - currentPosition.AverageBuyPrice) >= currentPosition.AverageBuyPrice * 0.03)
                     {
                         await this._messageSender.SendMessage($"[{marketContext.Ticker}]는 현재 가격이 평균 매입가의 5% 미만입니다. 트레이딩 팀은 휴식을 취합니다.");
                         continue;
