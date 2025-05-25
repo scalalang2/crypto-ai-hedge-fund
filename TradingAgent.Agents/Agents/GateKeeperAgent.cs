@@ -54,7 +54,7 @@ public class GateKeeperAgent :
             if(lastReasoning != null && lastReasoning.LastReasoningTime + TimeSpan.FromHours(3) > DateTime.UtcNow)
             {
                 await this._messageSender.SendMessage($"[{marketContext.Ticker}]는 마지막 추론 시간이 6시간 이내입니다. 트레이딩 팀은 휴식을 취합니다.");
-                return;
+                continue;
             }
         
             // 추론 12시간 미만인 경우에는 
@@ -76,18 +76,19 @@ public class GateKeeperAgent :
                     if (currentPosition == 0)
                     {
                         await this._messageSender.SendMessage($"[{marketContext.Ticker}]는 현재 포지션이 없습니다. 트레이딩 팀은 휴식을 취합니다.");
-                        return;
+                        continue;
                     }
 
                     if (currentPrice < averageBuyingPrice * 1.05m)
                     {
                         await this._messageSender.SendMessage($"[{marketContext.Ticker}]는 현재 가격이 평균 매입가의 5% 미만입니다. 트레이딩 팀은 휴식을 취합니다.");
-                        return;
+                        continue;
                     }
                 }
             }
         
             this._state.Candidates.Add(marketContext.Ticker, true);
+            this._logger.LogInformation("[{Ticker}] was added to candidates", marketContext.Ticker);
         }
 
         foreach (var candidate in this._state.Candidates)
