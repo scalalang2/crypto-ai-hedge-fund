@@ -55,7 +55,7 @@ public static class SharedUtils
         }
 
         var result = table.ToMinimalString();
-        result += $"\n\nAvailable Balance : {totalKrw} KRW";
+        result += $"\n\n Available Balance (KRW) : {totalKrw} KRW";
         
         var sb = new StringBuilder();
         sb.AppendLine("```");

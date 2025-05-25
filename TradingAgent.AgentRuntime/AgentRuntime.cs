@@ -61,6 +61,9 @@ public class AgentRuntime(
         _client.MessageReceived += MessageReceivedAsync;
         await _client.StartAsync();
         
+        // rest to ensure the discord client is fully initialized
+        await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+        
         await agentApp.PublishMessageAsync(new StartGateKeeperRequest(), new TopicId(nameof(GateKeeperAgent)), cancellationToken: cancellationToken);
         System.Environment.Exit(0);
     }

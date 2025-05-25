@@ -4,6 +4,8 @@ public interface IStorageService
 {
     Task AddTradeHistoryAsync(TradeHistoryRecord record);
     
+    Task TryAddInitialPositionAsync(Position position);
+    
     Task<List<Position>> GetAllPositionsAsync();
     
     Task<List<TradeHistoryRecord>> GetTradeHistoryAsync(uint count);
@@ -13,4 +15,6 @@ public interface IStorageService
     Task UpdateReasoningRecordAsync(string ticker, DateTime date);
     
     Task<ReasoningRecord?> GetReasoningRecordAsync(string ticker);
+
+    Task CleanAsync();
 }

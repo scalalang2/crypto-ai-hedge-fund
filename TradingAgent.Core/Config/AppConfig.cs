@@ -35,5 +35,7 @@ public class AppConfig
     
     public DiscordConfig Discord { get; set; } = new();
     
+    public ResearchTeamConfig ResearchTeam { get; set; } = new();
+    
     public string DatabasePath { get; set; } = "./TradingAgent.db";
 }

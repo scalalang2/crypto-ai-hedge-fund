@@ -1,6 +1,8 @@
+using TradingAgent.Core.Config;
+
 namespace TradingAgent.Agents.State;
 
 public class AgentSharedState
 {
-    public Dictionary<string, bool> Candidates { get; set; } = new();
+    public List<MarketContext> Candidates { get; set; } = new();
 }

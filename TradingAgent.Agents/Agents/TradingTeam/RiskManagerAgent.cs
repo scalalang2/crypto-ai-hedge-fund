@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OpenAI;
 using TradingAgent.Agents.AgentPrompts;
+using TradingAgent.Agents.Agents.Summarizer;
 using TradingAgent.Agents.Messages.ResearchTeam;
 using TradingAgent.Agents.Messages.TradingTeam;
 using TradingAgent.Agents.Utils;
@@ -75,6 +76,7 @@ public class RiskManagerAgent :
             throw new InvalidOperationException("Failed to parse response from Risk Manager Agent.");
         }
         
+        await this.PublishMessageAsync(response, new TopicId(nameof(SummarizerAgent)));
         await this.PublishMessageAsync(response, new TopicId(nameof(TraderAgent)));
     }
 }

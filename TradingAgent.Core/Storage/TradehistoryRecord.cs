@@ -24,4 +24,9 @@ public class TradeHistoryRecord
     /// 수량
     /// </summary>
     public double Amount { get; set; }
+    
+    /// <summary>
+    /// 거래에 사용된 자금
+    /// </summary>
+    public double Funds { get; set; }
 }

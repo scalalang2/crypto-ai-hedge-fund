@@ -9,6 +9,7 @@ using Microsoft.AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OpenAI;
+using RestSharp.Authenticators.OAuth;
 using TradingAgent.Agents.AgentPrompts;
 using TradingAgent.Agents.Agents.Summarizer;
 using TradingAgent.Agents.Agents.TradingTeam;
@@ -135,7 +136,7 @@ public class ResearchTeamAgent :
         discussionHistory.Add(initialDiscussion);
         
         // Start the discussion with the bearish researcher
-        const int maxRounds = 5;
+        var maxRounds = this._config.ResearchTeam.MaxDiscussionRounds;
         for (var i = 0; i < maxRounds; i++)
         {
             // bearish

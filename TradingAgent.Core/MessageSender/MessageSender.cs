@@ -12,10 +12,11 @@ public class MessageSender : IMessageSender
     
     public MessageSender(
         DiscordSocketClient discordSocketClient, 
-        AppConfig config)
+        AppConfig config, ILogger<MessageSender> logger)
     {
         this._discordSocketClient = discordSocketClient;
         this.config = config;
+        this._logger = logger;
     }
 
     public async Task SendMessage(string message)
@@ -27,7 +28,7 @@ public class MessageSender : IMessageSender
         }
         else
         {
-            _logger.LogError("Discord channel not found.");
+            this._logger.LogError("Discord channel not found.");
             throw new Exception("Discord channel not found.");
         }
     }

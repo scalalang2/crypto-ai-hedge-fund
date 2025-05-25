@@ -52,10 +52,24 @@ public class GateKeeperAgent :
     {
         foreach (var marketContext in this._config.Markets)
         {
+            var chanceRequest = new Chance.Request
+            {
+                market = marketContext.Ticker
+            };
+            var chanceResponse = await this._upbitClient.GetChance(chanceRequest);
+            var currentPosition = new Position
+            {
+                Symbol = marketContext.Ticker,
+                Amount = Convert.ToDouble(chanceResponse.ask_account.balance),
+                AverageBuyPrice = Convert.ToDouble(chanceResponse.ask_account.avg_buy_price),
+                LastUpdated = DateTime.UtcNow,
+            };
+            await _storageService.TryAddInitialPositionAsync(currentPosition);
+
             var lastReasoning = await _storageService.GetReasoningRecordAsync(marketContext.Ticker);
             if(lastReasoning != null && lastReasoning.LastReasoningTime + TimeSpan.FromHours(3) > DateTime.UtcNow)
             {
-                await this._messageSender.SendMessage($"[{marketContext.Ticker}]는 마지막 추론 시간이 6시간 이내입니다. 트레이딩 팀은 휴식을 취합니다.");
+                await this._messageSender.SendMessage($"[{marketContext.Ticker}]는 마지막 추론 시간이 {3}시간 이내입니다.");
                 continue;
             }
         
@@ -65,23 +79,14 @@ public class GateKeeperAgent :
                 var tickerResponse = await this._upbitClient.GetTicker(marketContext.Ticker);
                 if (tickerResponse.Count > 0)
                 {
-                    var currentPrice = Convert.ToDecimal(tickerResponse[0].trade_price);
-                    var request = new Chance.Request
-                    {
-                        market = marketContext.Ticker
-                    };
-                    var response = await this._upbitClient.GetChance(request);
-
-                    var averageBuyingPrice = Convert.ToDecimal(response.ask_account.avg_buy_price);
-                    var currentPosition = Convert.ToDecimal(response.ask_account.balance);
-
-                    if (currentPosition == 0)
+                    var currentPrice = Convert.ToDouble(tickerResponse[0].trade_price);
+                    if (currentPosition.Amount == 0)
                     {
                         await this._messageSender.SendMessage($"[{marketContext.Ticker}]는 현재 포지션이 없습니다. 트레이딩 팀은 휴식을 취합니다.");
                         continue;
                     }
 
-                    if (currentPrice < averageBuyingPrice * 1.05m)
+                    if (currentPrice < currentPosition.AverageBuyPrice * 1.05d)
                     {
                         await this._messageSender.SendMessage($"[{marketContext.Ticker}]는 현재 가격이 평균 매입가의 5% 미만입니다. 트레이딩 팀은 휴식을 취합니다.");
                         continue;
@@ -89,24 +94,19 @@ public class GateKeeperAgent :
                 }
             }
         
-            this._state.Candidates.Add(marketContext.Ticker, true);
+            this._state.Candidates.Add(marketContext);
             this._logger.LogInformation("[{Ticker}] was added to candidates", marketContext.Ticker);
         }
 
         foreach (var candidate in this._state.Candidates)
         {
-            var name = this._config.Markets.FirstOrDefault(x => x.Ticker == candidate.Key)!.Name;
             var message = new StartAnalysisRequest
             {
-                MarketContext = new MarketContext
-                {
-                    Ticker = candidate.Key,
-                    Name = name,
-                }
+                MarketContext = candidate,
             };
 
-            await this.PublishMessageAsync(message, new TopicId(nameof(NewsAnalystAgent)));
-            await this.PublishMessageAsync(message, new TopicId(nameof(SentimentAnalystAgent)));
+            // await this.PublishMessageAsync(message, new TopicId(nameof(NewsAnalystAgent)));
+            // await this.PublishMessageAsync(message, new TopicId(nameof(SentimentAnalystAgent)));
             await this.PublishMessageAsync(message, new TopicId(nameof(TechnicalAnalystAgent)));
         }
     }

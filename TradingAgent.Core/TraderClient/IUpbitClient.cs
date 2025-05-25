@@ -19,4 +19,6 @@ public interface IUpbitClient
     public Task<List<Quote>> GetMinuteCandles(int unit, Candles.Request args);
 
     public Task<List<ClosedOrderHistory.Response>> GetOrderHistory(ClosedOrderHistory.Request args);
+
+    public Task<Order.Response> GetOrder(string uuid);
 }

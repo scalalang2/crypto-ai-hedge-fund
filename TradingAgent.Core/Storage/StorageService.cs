@@ -18,7 +18,17 @@ public class StorageService : IStorageService
         await _dbContext.SaveChangesAsync();
         await UpdatePositionAsync(record);
     }
-    
+
+    public async Task TryAddInitialPositionAsync(Position position)
+    {
+        var pos = await _dbContext.Positions.FirstOrDefaultAsync(p => p.Symbol == position.Symbol);
+        if (pos == null)
+        {
+            _dbContext.Positions.Add(position);
+            await _dbContext.SaveChangesAsync();
+        }
+    }
+
     public async Task UpdatePositionAsync(TradeHistoryRecord trade)
     {
         var position = await _dbContext.Positions.FirstOrDefaultAsync(p => p.Symbol == trade.Symbol);
@@ -127,5 +137,13 @@ public class StorageService : IStorageService
     public async Task<ReasoningRecord?> GetReasoningRecordAsync(string ticker)
     {
         return await _dbContext.ReasoningRecords.FirstOrDefaultAsync(p => p.Ticker == ticker);
+    }
+
+    public async Task CleanAsync()
+    {
+        _dbContext.TradeHistoryRecords.RemoveRange(_dbContext.TradeHistoryRecords);
+        _dbContext.Positions.RemoveRange(_dbContext.Positions);
+        _dbContext.ReasoningRecords.RemoveRange(_dbContext.ReasoningRecords);
+        await _dbContext.SaveChangesAsync();
     }
 }

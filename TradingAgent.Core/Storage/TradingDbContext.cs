@@ -16,10 +16,7 @@ public class TradingDbContext : DbContext
     public TradingDbContext(AppConfig config, ILogger<TradingDbContext> logger)
     {
         this._logger = logger;
-        var folder = Environment.SpecialFolder.LocalApplicationData;
-        var path = Environment.GetFolderPath(folder);
-        this._dbPath = Path.Join(path, config.DatabasePath);
-        
+        this._dbPath = config.DatabasePath;
         this._logger.LogInformation("db path: {databasePath}", this._dbPath);
     }
 

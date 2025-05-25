@@ -136,10 +136,14 @@ public class UpbitClient : IUpbitClient
         return JsonConvert.DeserializeObject<List<ClosedOrderHistory.Response>>(response.Content);
     }
     
-    public async Task<List<Order.Response>> GetOrder(Order.Request args)
+    public async Task<Order.Response> GetOrder(string uuid)
     {
+        var args = new Order.Request
+        {
+            uuid = uuid,
+        };
         var response = await ApiCall("order", Method.Get, GenerateApiCallArgs(args));
-        return JsonConvert.DeserializeObject<List<Order.Response>>(response.Content);
+        return JsonConvert.DeserializeObject<Order.Response>(response.Content);
     }
     
     public async Task<List<Orders.Response>> GetOrders(Orders.Request args)

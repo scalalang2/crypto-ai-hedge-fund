@@ -81,8 +81,6 @@ public class TraderAgent :
             await Task.Delay(500); // rest to avoid rate limit
             await this.PlaceOrder(proposal, price.Value);
         }
-        
-        await this.PublishMessageAsync(item, new TopicId(nameof(SummarizerAgent)));
         await this.PublishMessageAsync(new SendPerformanceMessage(), new TopicId(nameof(SummarizerAgent)));
     }
 
@@ -96,14 +94,19 @@ public class TraderAgent :
     private async Task TryProposeTrade()
     {
         // ensure that all research results are received
-        if (this._state.Candidates.Any(market => this._researchResult.ContainsKey(market.Key)) == false)
+        if (this._state.Candidates.Any(market => this._researchResult.ContainsKey(market.Ticker) == false))
         {
             return;
         }
+
+        var candidates = this._state
+            .Candidates
+            .Where(market => this._researchResult.ContainsKey(market.Ticker))
+            .ToList();
         
-        var tickerResponse = await this._upbitClient.GetTicker(string.Join(",", this._config.Markets.Select(market => market.Ticker)));
+        var tickerResponse = await this._upbitClient.GetTicker(string.Join(",", candidates.Select(x => x.Ticker)));
         var currentPrice = SharedUtils.CurrentTickers(tickerResponse);
-        var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this._config.Markets, tickerResponse);
+        var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, candidates, tickerResponse);
         var chatHistory = new StringBuilder();
 
         foreach (var (market, result) in _researchResult)
@@ -177,36 +180,37 @@ public class TraderAgent :
         // 언제 체결될지는 모르겠으나 2초 정도 대기해봄
         await Task.Delay(2000);
 
-        var orderHistoryRequest = new ClosedOrderHistory.Request
+        var order= await _upbitClient.GetOrder(orderPlaced.uuid);
+        foreach(var trade in order.trades)
         {
-            market = proposal.Ticker,
-            limit = "30",
-        };
-        var orderHistory= await _upbitClient.GetOrderHistory(orderHistoryRequest);
-        
-        foreach(var order in orderHistory)
-        {
-            this._logger.LogInformation("궁금하니까 찍어보자 {order}", order);
             if(order.uuid != orderPlaced.uuid)
             {
                 continue;
             }
             
+            this._logger.LogInformation("order completed {@order}", order);
+            
             if (order.state == "done")
             {
-                var orderPrice = Convert.ToDouble(order.price);
-                var orderAmount = Convert.ToDouble(order.executed_volume);
-                var orderType = order.side == "bid" ? buy : sell;
-                var trade = new TradeHistoryRecord
+                if (trade.side == buy)
+                {
+                    
+                }
+                var orderPrice = Convert.ToDouble(trade.price);
+                var funds = Convert.ToDouble(trade.funds);
+                var orderAmount = Convert.ToDouble(trade.volume);
+                var orderType = trade.side == "bid" ? buy : sell;
+                var tradeRecord = new TradeHistoryRecord
                 {
                     Symbol = proposal.Ticker,
                     OrderType = orderType,
                     Price = orderPrice,
                     Amount = orderAmount,
-                    Date = order.created_at,
+                    Funds = funds,
+                    Date = order.created_at
                 };
                 
-                await this._storageService.AddTradeHistoryAsync(trade);
+                await this._storageService.AddTradeHistoryAsync(tradeRecord);
             }
         }
     }
