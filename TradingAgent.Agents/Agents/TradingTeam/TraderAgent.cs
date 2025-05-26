@@ -177,6 +177,7 @@ public class TraderAgent :
         }
         
         var orderPlaced = await this._upbitClient.PlaceOrder(request);
+        this._logger.LogInformation("order placed {@order}", orderPlaced);
         
         // 언제 체결될지는 모르겠으나 2초 정도 대기해봄
         await Task.Delay(2000);
@@ -191,12 +192,9 @@ public class TraderAgent :
             
             this._logger.LogInformation("order completed {@order}", order);
             
-            if (order.state == "done")
+            // 주문이 부분체결하고 짤짤이가 남아있으면 상태가 cancel로 들어온다.
+            if (order.state == "done" || order.state == "cancel")
             {
-                if (trade.side == buy)
-                {
-                    
-                }
                 var orderPrice = Convert.ToDouble(trade.price);
                 var funds = Convert.ToDouble(trade.funds);
                 var orderAmount = Convert.ToDouble(trade.volume);
