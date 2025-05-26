@@ -36,7 +36,6 @@ public class TraderAgent :
     private readonly AppConfig _config;
     private readonly AutoGen.Core.IAgent _agent;
     private readonly AgentSharedState _state;
-    private readonly Dictionary<string, ResearchResultResponse> _researchResult = new();
         
     public TraderAgent(
         AgentId id, 
@@ -87,21 +86,21 @@ public class TraderAgent :
     public async ValueTask HandleAsync(ResearchResultResponse item, MessageContext messageContext)
     {
         this._logger.LogInformation("[TraderAgent] {sender} {research_result}", messageContext.Sender, item);
-        this._researchResult[item.MarketContext.Ticker] = item;
+        this._state.ResearchResults[item.MarketContext.Ticker] = item;
         await this.TryProposeTrade();
     }
 
     private async Task TryProposeTrade()
     {
         // ensure that all research results are received
-        if (this._state.Candidates.Any(market => this._researchResult.ContainsKey(market.Ticker) == false))
+        if (this._state.Candidates.Any(market => this._state.ResearchResults.ContainsKey(market.Ticker) == false))
         {
             return;
         }
 
         var candidates = this._state
             .Candidates
-            .Where(market => this._researchResult.ContainsKey(market.Ticker))
+            .Where(market => this._state.ResearchResults.ContainsKey(market.Ticker))
             .ToList();
         
         var tickerResponse = await this._upbitClient.GetTicker(string.Join(",", candidates.Select(x => x.Ticker)));
@@ -109,7 +108,7 @@ public class TraderAgent :
         var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, candidates, tickerResponse);
         var chatHistory = new StringBuilder();
 
-        foreach (var (market, result) in _researchResult)
+        foreach (var (market, result) in _state.ResearchResults)
         {
             var jsonString = JsonConvert.SerializeObject(result.DiscussionHistory);
             chatHistory.AppendLine($"## {result.MarketContext.Ticker} ({result.MarketContext.Name}) Research Result");

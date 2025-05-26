@@ -11,6 +11,7 @@ public class RiskManagerPrompt
         1. Position Sizing: Limit risk on any single trade to a maximum of 25% of total portfolio capital
         2. Portfolio Diversification: Ensure no single asset or sector exceeds 30% of total portfolio value.
         3. Risk-Reward Ratio: Only approve trades with a minimum risk-reward ratio of 1:2.
+        4. Priortize Trader's Final Decision more than the research team's opinions, but still consider their insights.
 
         Based on your analysis, provide a risk assessment and recommend actions to the trader.
         Explain your reasoning behind the assessment and recommendations.
@@ -22,7 +23,10 @@ public class RiskManagerPrompt
         """;
 
     public const string UserMessage = """
-        # Trader's Decision
+        # Research Team Chat History
+        {research_team_chat_history}
+        
+        # Trader's Final Decision
         {trader_decision}
         
         # Current Price
@@ -35,8 +39,9 @@ public class RiskManagerPrompt
         Provide a detailed risk assessment and recommend actions to the trader.
         
         IMPORTANT: 
-        1. For each asset/ticker, recommend only one action (Buy, Sell, or Hold) per decision cycle. Do not propose multiple actions for the same asset. Each ticker must appear only once in the output array.
-        2. The minimum total value for a proposal is 20,000 KRW for (Buy, Sell) actions.
+        1. If you are rebalancing the portfolio, always include sell orders before buy orders in the JSON output. For example, if you want to sell 1 unit of KRW-BTC and buy 100 units of KRW-XRP, the sell order for KRW-BTC should appear before the buy order for KRW-XRP in the array.
+        2. "Trader's Final Decision" represents the company's ultimate decision. If the trader has a strong buy opinion, you should take that into account. While your primary role is risk management, do not ignore profitability.
+        3. The minimum total value for a proposal is 20,000 KRW for (Buy, Sell) actions.
 
         Please provide your response in the following format:
         {

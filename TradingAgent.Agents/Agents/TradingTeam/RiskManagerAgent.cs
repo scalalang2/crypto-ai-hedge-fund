@@ -1,3 +1,4 @@
+using System.Text;
 using AutoGen.Core;
 using AutoGen.OpenAI;
 using AutoGen.OpenAI.Extension;
@@ -13,6 +14,7 @@ using TradingAgent.Agents.AgentPrompts;
 using TradingAgent.Agents.Agents.Summarizer;
 using TradingAgent.Agents.Messages.ResearchTeam;
 using TradingAgent.Agents.Messages.TradingTeam;
+using TradingAgent.Agents.State;
 using TradingAgent.Agents.Utils;
 using TradingAgent.Core.Config;
 using TradingAgent.Core.TraderClient;
@@ -29,15 +31,19 @@ public class RiskManagerAgent :
     private readonly AppConfig _config;
     private readonly AutoGen.Core.IAgent _agent;
     private readonly IUpbitClient _upbitClient;
+    private readonly AgentSharedState _state;
         
     public RiskManagerAgent(
         AgentId id, 
         IAgentRuntime runtime, 
         ILogger<BaseAgent> logger, 
-        AppConfig config, IUpbitClient upbitClient) : base(id, runtime, AgentName, logger)
+        AppConfig config, 
+        IUpbitClient upbitClient, 
+        AgentSharedState state) : base(id, runtime, AgentName, logger)
     {
         this._config = config;
         this._upbitClient = upbitClient;
+        this._state = state;
 
         var client = new OpenAIClient(config.OpenAIApiKey).GetChatClient(config.SmartAIModel);
         this._agent = new OpenAIChatAgent(
@@ -50,11 +56,23 @@ public class RiskManagerAgent :
 
     public async ValueTask HandleAsync(ProposeTransactionMessage item, MessageContext messageContext)
     {
-        var tickerResponse = await this._upbitClient.GetTicker(string.Join(",", this._config.Markets.Select(market => market.Ticker)));
+        var candidates = this._state.Candidates;
+        
+        var tickerResponse = await this._upbitClient.GetTicker(string.Join(",", candidates.Select(market => market.Ticker)));
         var currentPrice = SharedUtils.CurrentTickers(tickerResponse);
-        var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, this._config.Markets, tickerResponse);
+        var currentPosition = await SharedUtils.GetCurrentPositionPrompt(this._upbitClient, candidates, tickerResponse);
+        
+        var chatHistory = new StringBuilder();
+        foreach (var (market, result) in _state.ResearchResults)
+        {
+            var jsonString = JsonConvert.SerializeObject(result.DiscussionHistory);
+            chatHistory.AppendLine($"## {result.MarketContext.Ticker} ({result.MarketContext.Name}) Research Result");
+            chatHistory.AppendLine($"### Confidence: {jsonString}");
+            chatHistory.AppendLine();
+        }
         
         var message = RiskManagerPrompt.UserMessage
+            .Replace("{research_team_chat_history}", chatHistory.ToString())
             .Replace("{transaction_proposal}", JsonConvert.SerializeObject(item.Proposals))
             .Replace("{current_price}", currentPrice)
             .Replace("{current_position}", currentPosition);
